@@ -1,0 +1,1815 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Civic Lens — Legislation in Plain English</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════
+   RESET & TOKENS
+═══════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --navy:        #0D1B2A;
+  --navy-mid:    #162535;
+  --navy-light:  #1E3448;
+  --slate:       #4A6274;
+  --slate-light: #7A97A8;
+  --gold:        #C9A84C;
+  --gold-light:  #E8C96A;
+  --cream:       #F8F5EE;
+  --cream-dark:  #EDE9DF;
+  --cream-deep:  #D9D4C8;
+  --white:       #FFFFFF;
+  --green:       #1A7A4A;
+  --green-bg:    #E6F4EC;
+  --green-border:#B6DCCA;
+  --red:         #C0392B;
+  --red-bg:      #FDECEA;
+  --amber:       #8A6000;
+  --amber-bg:    #FFF8E5;
+  --amber-border:#EDD98A;
+  --text:        #0D1B2A;
+  --text-sec:    #4A6274;
+  --text-muted:  #8FA3B1;
+  --mono:        'IBM Plex Mono', monospace;
+  --display:     'Playfair Display', serif;
+  --body:        'Inter', sans-serif;
+  --radius:      14px;
+  --shadow:      0 2px 16px rgba(13,27,42,0.08);
+  --shadow-lg:   0 8px 40px rgba(13,27,42,0.14);
+}
+
+html { scroll-behavior: smooth; }
+body { font-family: var(--body); background: var(--cream); color: var(--text); min-height: 100vh; }
+
+/* ═══════════════════════════════════════
+   UTILITY
+═══════════════════════════════════════ */
+.mono { font-family: var(--mono); }
+.hidden { display: none !important; }
+.eyebrow { font-family: var(--mono); font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--gold); }
+.btn-primary {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: var(--gold); color: var(--navy); font-size: 14px; font-weight: 700;
+  padding: 11px 22px; border-radius: 10px; border: none; cursor: pointer;
+  transition: opacity 0.15s;
+}
+.btn-primary:hover { opacity: 0.88; }
+.btn-ghost {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: transparent; color: var(--cream); font-size: 14px; font-weight: 500;
+  padding: 11px 20px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2); cursor: pointer;
+  transition: border-color 0.15s;
+}
+.btn-ghost:hover { border-color: rgba(255,255,255,0.5); }
+
+/* ═══════════════════════════════════════
+   NAV
+═══════════════════════════════════════ */
+.nav {
+  position: sticky; top: 0; z-index: 200;
+  background: var(--navy); border-bottom: 1px solid rgba(255,255,255,0.06);
+  height: 62px; display: flex; align-items: center;
+  padding: 0 40px; gap: 32px;
+}
+.nav-logo { font-family: var(--display); font-size: 20px; color: var(--cream); text-decoration: none; flex-shrink: 0; }
+.nav-logo span { color: var(--gold); }
+.nav-links { display: flex; gap: 2px; }
+.nav-link {
+  font-size: 13px; font-weight: 500; color: rgba(255,255,255,0.55);
+  padding: 7px 13px; border-radius: 7px; cursor: pointer;
+  transition: all 0.15s; border: none; background: none;
+}
+.nav-link:hover, .nav-link.active { color: var(--cream); background: rgba(255,255,255,0.07); }
+.nav-search {
+  flex: 1; max-width: 280px; margin-left: auto;
+  display: flex; align-items: center; gap: 8px;
+  background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 8px; padding: 8px 13px;
+  font-size: 13px; color: rgba(255,255,255,0.4);
+  cursor: text;
+}
+.nav-search input {
+  background: none; border: none; outline: none; color: var(--cream);
+  font-size: 13px; font-family: var(--body); width: 100%;
+}
+.nav-search input::placeholder { color: rgba(255,255,255,0.35); }
+.nav-right { display: flex; align-items: center; gap: 10px; }
+.nav-upgrade {
+  background: linear-gradient(135deg, var(--gold), var(--gold-light));
+  color: var(--navy); font-size: 12px; font-weight: 700;
+  padding: 7px 14px; border-radius: 8px; border: none; cursor: pointer;
+  font-family: var(--mono); letter-spacing: 0.04em;
+}
+.nav-signin {
+  font-size: 13px; font-weight: 500; color: rgba(255,255,255,0.6);
+  background: none; border: 1px solid rgba(255,255,255,0.15);
+  padding: 7px 14px; border-radius: 8px; cursor: pointer;
+}
+
+/* ═══════════════════════════════════════
+   PAGE ROUTER
+═══════════════════════════════════════ */
+.page { display: none; }
+.page.active { display: block; }
+
+/* ═══════════════════════════════════════
+   HERO
+═══════════════════════════════════════ */
+.hero {
+  background: var(--navy); padding: 72px 40px 0;
+  display: grid; grid-template-columns: 1fr 420px;
+  gap: 56px; align-items: end; overflow: hidden; position: relative;
+}
+.hero::before {
+  content: '';
+  position: absolute; inset: 0;
+  background-image: linear-gradient(rgba(201,168,76,0.04) 1px, transparent 1px),
+                    linear-gradient(90deg, rgba(201,168,76,0.04) 1px, transparent 1px);
+  background-size: 48px 48px; pointer-events: none;
+}
+.hero-left { padding-bottom: 64px; position: relative; z-index: 2; }
+.hero-eyebrow {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: rgba(201,168,76,0.12); border: 1px solid rgba(201,168,76,0.25);
+  border-radius: 6px; padding: 5px 12px;
+  font-family: var(--mono); font-size: 11px; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--gold); margin-bottom: 22px;
+}
+.hero-dot { width: 6px; height: 6px; background: var(--gold); border-radius: 50%; animation: pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(0.8)} }
+.hero-h1 { font-family: var(--display); font-size: 54px; line-height: 1.09; color: var(--cream); letter-spacing: -0.02em; margin-bottom: 18px; }
+.hero-h1 em { font-style: italic; color: var(--gold); }
+.hero-sub { font-size: 16px; line-height: 1.65; color: rgba(255,255,255,0.5); max-width: 460px; margin-bottom: 32px; }
+.hero-actions { display: flex; gap: 10px; margin-bottom: 44px; }
+.hero-stats { display: flex; gap: 36px; padding-top: 28px; border-top: 1px solid rgba(255,255,255,0.08); }
+.hero-stat-val { font-family: var(--display); font-size: 26px; color: var(--cream); letter-spacing: -0.02em; }
+.hero-stat-label { font-family: var(--mono); font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(255,255,255,0.3); margin-top: 3px; }
+.hero-right { position: relative; z-index: 2; align-self: end; }
+.hero-card {
+  background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 16px 16px 0 0; padding: 22px; backdrop-filter: blur(10px);
+}
+.hero-card-eyebrow { font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(255,255,255,0.3); margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+.hero-card-status { display: inline-flex; align-items: center; gap: 5px; background: rgba(26,122,74,0.25); border: 1px solid rgba(26,122,74,0.4); border-radius: 4px; padding: 2px 8px; font-size: 10px; font-weight: 600; color: #4AE88A; }
+.hero-card-dot { width: 5px; height: 5px; background: #4AE88A; border-radius: 50%; }
+.hero-card-title { font-family: var(--display); font-size: 18px; color: var(--cream); line-height: 1.3; margin-bottom: 14px; }
+.hero-card-tiles { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+.hct { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 10px 12px; }
+.hct-icon { font-size: 13px; margin-bottom: 4px; }
+.hct-label { font-family: var(--mono); font-size: 8px; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(255,255,255,0.3); margin-bottom: 3px; }
+.hct-val { font-size: 12px; font-weight: 600; color: var(--cream); }
+.hero-card-footer { display: flex; align-items: center; justify-content: space-between; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.08); font-family: var(--mono); font-size: 10px; color: rgba(255,255,255,0.3); }
+.hero-card-read { color: var(--gold); font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 5px; }
+
+/* ═══════════════════════════════════════
+   SEARCH BAND
+═══════════════════════════════════════ */
+.search-band {
+  background: var(--cream-dark); border-bottom: 1px solid var(--cream-deep);
+  padding: 16px 40px; display: flex; align-items: center; gap: 12px;
+}
+.search-input-wrap {
+  flex: 1; display: flex; align-items: center; gap: 10px;
+  background: var(--white); border: 1.5px solid var(--cream-dark);
+  border-radius: 10px; padding: 11px 16px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+}
+.search-input-wrap input {
+  flex: 1; border: none; outline: none; font-size: 14px;
+  font-family: var(--body); color: var(--text); background: none;
+}
+.search-input-wrap input::placeholder { color: var(--text-muted); }
+.search-filters { display: flex; gap: 8px; }
+.filter-pill {
+  padding: 8px 14px; border-radius: 8px; font-size: 12px; font-weight: 500;
+  border: 1.5px solid var(--cream-dark); background: var(--white);
+  color: var(--text-sec); cursor: pointer; display: flex; align-items: center; gap: 6px;
+  transition: all 0.15s; white-space: nowrap;
+}
+.filter-pill.active { background: var(--navy); border-color: var(--navy); color: var(--cream); }
+.filter-pill:hover:not(.active) { border-color: var(--slate-light); }
+
+/* ═══════════════════════════════════════
+   MAIN LAYOUT
+═══════════════════════════════════════ */
+.main { display: grid; grid-template-columns: 1fr 320px; gap: 28px; padding: 32px 40px; max-width: 1400px; margin: 0 auto; }
+
+/* ═══════════════════════════════════════
+   FEED HEADER
+═══════════════════════════════════════ */
+.feed-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; flex-wrap: wrap; gap: 12px; }
+.feed-title { font-family: var(--display); font-size: 24px; color: var(--text); letter-spacing: -0.02em; }
+.feed-meta { font-family: var(--mono); font-size: 10px; color: var(--text-muted); letter-spacing: 0.06em; margin-top: 3px; }
+.upgrade-pill {
+  display: flex; align-items: center; gap: 10px;
+  background: linear-gradient(135deg, var(--navy), var(--navy-mid));
+  border: 1px solid rgba(201,168,76,0.3); border-radius: 10px; padding: 9px 14px; cursor: pointer;
+}
+.upgrade-pill-label { font-family: var(--mono); font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gold); font-weight: 700; }
+.upgrade-pill-sub { font-size: 10px; color: rgba(255,255,255,0.4); margin-top: 1px; }
+.upgrade-pill-btn { background: linear-gradient(135deg,var(--gold),var(--gold-light)); color: var(--navy); font-family: var(--mono); font-size: 9px; font-weight: 700; padding: 5px 11px; border-radius: 6px; letter-spacing: 0.06em; white-space: nowrap; }
+
+/* ═══════════════════════════════════════
+   BILL ROW
+═══════════════════════════════════════ */
+.bill-row {
+  background: var(--white); border: 1px solid var(--cream-dark); border-radius: var(--radius);
+  margin-bottom: 12px; overflow: hidden; display: grid; grid-template-columns: 1fr 56px;
+  transition: box-shadow 0.15s, transform 0.15s; cursor: pointer;
+}
+.bill-row:hover { box-shadow: var(--shadow-lg); transform: translateY(-1px); }
+.bill-row-main { padding: 20px 22px; }
+.bill-row-top { display: flex; align-items: center; gap: 10px; margin-bottom: 9px; flex-wrap: wrap; }
+.level-badge { font-family: var(--mono); font-size: 9px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; padding: 3px 9px; border-radius: 4px; }
+.level-badge.federal { background: #E8EFF6; color: #1B4F8A; }
+.level-badge.state   { background: #EAF2EA; color: #1A6B3A; }
+.level-badge.local   { background: #F5EEE6; color: #8A4B1B; }
+.bill-num { font-family: var(--mono); font-size: 11px; color: var(--text-muted); }
+.bill-status {
+  margin-left: auto; display: flex; align-items: center; gap: 5px;
+  font-size: 11px; font-weight: 600; letter-spacing: 0.04em;
+}
+.status-dot { width: 7px; height: 7px; border-radius: 50%; }
+.status-signed { color: var(--green); } .status-signed .status-dot { background: var(--green); }
+.status-pending { color: var(--amber); } .status-pending .status-dot { background: var(--gold); }
+.status-progress { color: #1B4F8A; } .status-progress .status-dot { background: #3A7FCC; }
+.bill-title-text { font-family: var(--display); font-size: 18px; line-height: 1.3; color: var(--text); margin-bottom: 7px; letter-spacing: -0.01em; }
+.bill-summary-text { font-size: 13px; line-height: 1.65; color: var(--text-sec); margin-bottom: 14px; }
+
+/* Impact tiles on bill row */
+.impact-tiles { display: flex; gap: 8px; margin-bottom: 14px; }
+.itile {
+  flex: 1; border-radius: 9px; padding: 10px 12px;
+  display: flex; align-items: center; gap: 10px;
+  border: 1px solid var(--cream-dark); background: var(--cream);
+}
+.itile.positive { background: var(--green-bg); border-color: var(--green-border); }
+.itile.caution  { background: var(--amber-bg); border-color: var(--amber-border); }
+.itile-icon { font-size: 18px; flex-shrink: 0; }
+.itile-label { font-family: var(--mono); font-size: 8px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); }
+.itile.positive .itile-label { color: #1A7A4A; }
+.itile.caution  .itile-label { color: var(--amber); }
+.itile-val { font-size: 15px; font-weight: 800; color: var(--text); font-family: var(--mono); letter-spacing: -0.02em; line-height: 1.1; }
+.itile.positive .itile-val { color: var(--green); }
+.itile.caution  .itile-val { color: var(--amber); }
+.itile-sub { font-size: 10px; color: var(--text-muted); margin-top: 1px; line-height: 1.3; }
+.itile.positive .itile-sub { color: #2A9A5A; }
+.itile.caution  .itile-sub { color: #A07C00; }
+
+/* Sentiment bar on bill row */
+.sentiment-bar-wrap { margin-bottom: 12px; }
+.sentiment-label-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px; }
+.sentiment-label { font-family: var(--mono); font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); }
+.sentiment-counts { font-family: var(--mono); font-size: 10px; color: var(--text-muted); }
+.sentiment-bar { height: 6px; border-radius: 3px; background: var(--cream-dark); overflow: hidden; display: flex; }
+.s-for   { background: var(--green); transition: width 0.4s; }
+.s-against { background: var(--red); transition: width 0.4s; }
+.s-abstain { background: var(--cream-deep); transition: width 0.4s; }
+.sentiment-vote-row { display: flex; gap: 6px; margin-top: 8px; }
+.vote-btn {
+  flex: 1; padding: 6px 8px; border-radius: 7px; border: 1.5px solid var(--cream-dark);
+  background: transparent; font-size: 11px; font-weight: 600; color: var(--text-sec);
+  cursor: pointer; transition: all 0.15s; display: flex; align-items: center; justify-content: center; gap: 5px;
+}
+.vote-btn:hover { border-color: var(--slate-light); color: var(--text); }
+.vote-btn.voted-for     { background: var(--green-bg); border-color: var(--green); color: var(--green); }
+.vote-btn.voted-against { background: var(--red-bg); border-color: var(--red); color: var(--red); }
+.vote-btn.voted-abstain { background: var(--cream-dark); border-color: var(--slate-light); color: var(--slate); }
+
+.bill-footer { display: flex; align-items: center; gap: 14px; padding-top: 10px; border-top: 1px solid var(--cream-dark); }
+.bill-date-label { font-family: var(--mono); font-size: 10px; color: var(--text-muted); }
+.bill-action { display: flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 500; color: var(--text-sec); cursor: pointer; padding: 3px 0; }
+.bill-action:hover { color: var(--text); }
+.read-more-pill {
+  margin-left: auto;
+  display: flex; align-items: center; gap: 6px;
+  background: var(--cream-dark); border-radius: 20px;
+  padding: 6px 14px; font-size: 12px; font-weight: 600;
+  color: var(--navy); cursor: pointer; border: none;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+.read-more-pill:hover { background: var(--cream-deep); }
+.bill-row-side {
+  width: 48px;
+  background: var(--cream); border-left: 1px solid var(--cream-dark);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+}
+.side-btn {
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  font-family: var(--mono); font-size: 8px; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--text-muted); cursor: pointer;
+}
+.side-btn svg { color: var(--slate); }
+.side-btn:hover svg { color: var(--navy); }
+.side-divider { width: 22px; height: 1px; background: var(--cream-dark); }
+.side-read-btn { width: 34px; height: 34px; background: var(--navy); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--cream); }
+
+/* ═══════════════════════════════════════
+   LOADING / ERROR STATES
+═══════════════════════════════════════ */
+.loading-wrap { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 20px; gap: 14px; }
+.spinner { width: 32px; height: 32px; border: 3px solid var(--cream-dark); border-top-color: var(--gold); border-radius: 50%; animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-text { font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); }
+.error-wrap { background: var(--red-bg); border: 1px solid #F5C0BB; border-radius: var(--radius); padding: 20px 24px; margin-bottom: 16px; }
+.error-title { font-weight: 600; color: var(--red); margin-bottom: 6px; font-size: 14px; }
+.error-text { font-size: 13px; color: var(--text-sec); line-height: 1.55; }
+.demo-banner {
+  background: rgba(201,168,76,0.12); border: 1px solid rgba(201,168,76,0.3);
+  border-radius: var(--radius); padding: 12px 18px; margin-bottom: 16px;
+  display: flex; align-items: center; gap: 10px;
+  font-size: 13px; color: var(--text-sec);
+}
+.demo-banner strong { color: var(--text); }
+
+/* ═══════════════════════════════════════
+   SIDEBAR
+═══════════════════════════════════════ */
+.sidebar-widget { background: var(--white); border: 1px solid var(--cream-dark); border-radius: var(--radius); overflow: hidden; margin-bottom: 18px; }
+.widget-head { padding: 14px 18px 12px; border-bottom: 1px solid var(--cream-dark); display: flex; justify-content: space-between; align-items: center; }
+.widget-title { font-family: var(--display); font-size: 16px; color: var(--text); }
+.widget-link { font-size: 11px; color: var(--gold); font-weight: 600; cursor: pointer; }
+.widget-body { padding: 14px 18px; }
+
+/* Rep mini */
+.rep-mini { display: flex; align-items: center; gap: 11px; padding: 9px 0; border-bottom: 1px solid var(--cream-dark); cursor: pointer; }
+.rep-mini:last-child { border-bottom: none; }
+.rep-avatar { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: white; flex-shrink: 0; }
+.rep-avatar.R { background: linear-gradient(135deg,#DC2626,#B91C1C); }
+.rep-avatar.D { background: linear-gradient(135deg,#2563EB,#1D4ED8); }
+.rep-mini-name { font-size: 13px; font-weight: 600; color: var(--text); }
+.rep-mini-detail { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+.party-tag { font-family: var(--mono); font-size: 8px; font-weight: 600; padding: 2px 7px; border-radius: 4px; letter-spacing: 0.08em; }
+.party-tag.R { background: #FEE2E2; color: #B91C1C; }
+.party-tag.D { background: #DBEAFE; color: #1D4ED8; }
+
+/* Activity widget */
+.activity-item { display: flex; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--cream-dark); }
+.activity-item:last-child { border-bottom: none; }
+.activity-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; margin-top: 4px; }
+.activity-dot.signed { background: var(--green); }
+.activity-dot.pending { background: var(--gold); }
+.activity-dot.voted   { background: #3A7FCC; }
+.activity-text { font-size: 12px; line-height: 1.5; color: var(--text-sec); }
+.activity-text strong { color: var(--text); font-weight: 600; }
+.activity-time { font-family: var(--mono); font-size: 9px; color: var(--text-muted); margin-top: 3px; }
+
+/* Map widget */
+.district-map-widget {
+  height: 130px; background: linear-gradient(160deg,#1a2e45 0%,#0f1f30 100%);
+  border-radius: 10px; margin-bottom: 12px; position: relative; overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+}
+.dmw-label { font-family: var(--display); font-size: 15px; color: var(--gold); text-align: center; position: relative; z-index: 2; }
+.dmw-sub { font-family: var(--mono); font-size: 9px; color: rgba(255,255,255,0.4); letter-spacing: 0.1em; text-align: center; margin-top: 3px; position: relative; z-index: 2; }
+
+/* Rep lookup */
+.rep-lookup-input {
+  display: flex; align-items: center; gap: 8px; background: var(--cream);
+  border: 1.5px solid var(--cream-dark); border-radius: 8px;
+  padding: 9px 13px; font-size: 13px; color: var(--text-muted); margin-bottom: 13px; cursor: text;
+}
+.rep-lookup-input input { background: none; border: none; outline: none; font-size: 13px; font-family: var(--body); color: var(--text); flex: 1; }
+.rep-lookup-input input::placeholder { color: var(--text-muted); }
+.rep-lookup-btn { background: var(--navy); color: var(--cream); border: none; border-radius: 6px; padding: 5px 11px; font-size: 11px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+
+/* ═══════════════════════════════════════
+   BILL DETAIL PAGE
+═══════════════════════════════════════ */
+#page-detail { max-width: 860px; margin: 0 auto; padding: 28px 40px; }
+.detail-back { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--gold); font-weight: 600; cursor: pointer; margin-bottom: 20px; background: none; border: none; }
+.detail-header-card { background: var(--navy); border-radius: var(--radius); padding: 28px 30px 24px; margin-bottom: 16px; }
+.detail-bill-num { font-family: var(--mono); font-size: 11px; color: rgba(255,255,255,0.4); margin-bottom: 8px; letter-spacing: 0.1em; }
+.detail-title { font-family: var(--display); font-size: 28px; color: var(--cream); line-height: 1.2; margin-bottom: 12px; letter-spacing: -0.02em; }
+.detail-meta { display: flex; gap: 16px; flex-wrap: wrap; }
+.detail-meta-chip { font-family: var(--mono); font-size: 10px; color: rgba(255,255,255,0.4); display: flex; align-items: center; gap: 4px; }
+.detail-meta-chip span { color: rgba(255,255,255,0.8); font-weight: 500; }
+
+/* Impact hero on detail */
+.impact-hero {
+  background: var(--cream-dark); border: 1px solid var(--cream-deep); border-radius: var(--radius);
+  border-top: 3px solid var(--gold); padding: 20px 22px; margin-bottom: 16px;
+}
+.impact-hero-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.impact-hero-label { display: flex; align-items: center; gap: 7px; }
+.impact-hero-dot { width: 7px; height: 7px; background: var(--gold); border-radius: 50%; }
+.impact-hero-title { font-family: var(--mono); font-size: 10px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text); }
+.impact-hero-avg-tag { font-family: var(--mono); font-size: 9px; color: var(--text-muted); letter-spacing: 0.08em; text-transform: uppercase; background: var(--cream-deep); padding: 3px 9px; border-radius: 6px; }
+.impact-cards { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+.impact-card { background: var(--white); border: 1px solid var(--cream-dark); border-radius: 12px; padding: 16px; }
+.impact-card.positive { background: var(--green-bg); border-color: var(--green-border); }
+.impact-card.caution  { background: var(--amber-bg); border-color: var(--amber-border); }
+.ic-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.ic-title-row { display: flex; align-items: center; gap: 8px; }
+.ic-icon { width: 30px; height: 30px; border-radius: 7px; background: rgba(0,0,0,0.05); display: flex; align-items: center; justify-content: center; font-size: 14px; }
+.ic-title { font-size: 12px; font-weight: 700; color: var(--text); }
+.ic-badge { font-family: var(--mono); font-size: 8px; font-weight: 700; padding: 2px 7px; border-radius: 4px; letter-spacing: 0.08em; text-transform: uppercase; }
+.ic-badge.positive { background: #C8EDD8; color: var(--green); }
+.ic-badge.neutral  { background: var(--cream-dark); color: var(--text-sec); }
+.ic-badge.caution  { background: #F5E8B0; color: var(--amber); }
+.ic-num { font-size: 26px; font-weight: 800; font-family: var(--mono); letter-spacing: -0.03em; line-height: 1; margin-bottom: 4px; color: var(--text); }
+.impact-card.positive .ic-num { color: var(--green); }
+.impact-card.caution  .ic-num { color: var(--amber); }
+.ic-sub { font-size: 11px; color: var(--text-muted); line-height: 1.45; }
+.impact-card.positive .ic-sub { color: #2A9A5A; }
+.impact-card.caution  .ic-sub { color: #A07C00; }
+.impact-upgrade { background: linear-gradient(135deg,var(--navy),var(--navy-mid)); border-radius: 10px; padding: 12px 16px; display: flex; align-items: center; gap: 12px; cursor: pointer; border: 1px solid rgba(201,168,76,0.3); }
+.iu-icon { width: 32px; height: 32px; border-radius: 8px; background: linear-gradient(135deg,var(--gold),var(--gold-light)); display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+.iu-title { font-size: 12px; font-weight: 700; color: var(--cream); margin-bottom: 2px; }
+.iu-sub   { font-size: 10px; color: rgba(255,255,255,0.4); }
+.iu-btn   { background: linear-gradient(135deg,var(--gold),var(--gold-light)); color: var(--navy); font-family: var(--mono); font-size: 9px; font-weight: 700; padding: 7px 13px; border-radius: 8px; white-space: nowrap; letter-spacing: 0.06em; }
+
+/* Depth tabs on detail */
+.depth-section { background: var(--navy-mid); border-radius: var(--radius); padding: 16px 20px; margin-bottom: 16px; }
+.depth-section-label { font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--gold); margin-bottom: 10px; }
+.depth-tabs { display: flex; background: rgba(0,0,0,0.3); border-radius: 10px; padding: 3px; gap: 3px; }
+.depth-tab { flex: 1; text-align: center; padding: 8px 6px; border-radius: 8px; font-size: 11px; font-weight: 500; color: rgba(255,255,255,0.4); cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 4px; }
+.depth-tab.active { background: var(--gold); color: var(--navy); font-weight: 700; }
+.depth-tab.locked { opacity: 0.45; cursor: not-allowed; }
+
+/* Detail body sections */
+.detail-section { background: var(--white); border: 1px solid var(--cream-dark); border-radius: var(--radius); padding: 20px 22px; margin-bottom: 14px; }
+.section-eyebrow { font-family: var(--mono); font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 10px; }
+.section-body { font-size: 14px; line-height: 1.7; color: var(--text-sec); }
+.section-body p { margin-bottom: 10px; }
+.section-body p:last-child { margin-bottom: 0; }
+
+/* At a glance grid */
+.glance-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.glance-card { background: var(--cream); border: 1px solid var(--cream-dark); border-radius: 10px; padding: 13px; }
+.glance-icon { font-size: 18px; margin-bottom: 5px; }
+.glance-label { font-family: var(--mono); font-size: 8px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); margin-bottom: 3px; }
+.glance-val { font-size: 13px; font-weight: 600; color: var(--text); line-height: 1.35; }
+
+/* Vote section */
+.vote-bar-track { height: 10px; border-radius: 5px; background: var(--cream-dark); overflow: hidden; margin-bottom: 6px; }
+.vote-bar-fill { height: 100%; background: linear-gradient(90deg,var(--green),#2AAC65); border-radius: 5px; }
+.vote-tally { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 11px; }
+.vt-yes { color: var(--green); font-weight: 600; }
+.vt-no  { color: var(--red); font-weight: 600; }
+.vt-abs { color: var(--text-muted); }
+
+/* Rep vote rows */
+.rep-vote-row { display: flex; align-items: center; gap: 11px; padding: 10px 0; border-bottom: 1px solid var(--cream-dark); }
+.rep-vote-row:last-child { border-bottom: none; }
+.rep-vote-avatar { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: white; flex-shrink: 0; }
+.rep-vote-name { flex: 1; font-size: 13px; font-weight: 600; color: var(--text); }
+.rep-vote-party { font-size: 11px; color: var(--text-muted); }
+.vote-chip { font-family: var(--mono); font-size: 10px; font-weight: 700; padding: 3px 9px; border-radius: 6px; letter-spacing: 0.06em; }
+.vote-chip.yea { background: #E6F4EC; color: var(--green); }
+.vote-chip.nay { background: var(--red-bg); color: var(--red); }
+
+/* Public sentiment detail */
+.sentiment-detail { }
+.sentiment-full-bar { height: 12px; border-radius: 6px; background: var(--cream-dark); overflow: hidden; display: flex; margin-bottom: 10px; }
+.sentiment-legend { display: flex; gap: 18px; margin-bottom: 14px; }
+.sl-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-sec); }
+.sl-dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+.sentiment-vs { background: var(--cream); border-radius: 10px; padding: 14px; }
+.sentiment-vs-title { font-family: var(--mono); font-size: 9px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); margin-bottom: 10px; }
+.svs-row { display: flex; align-items: center; gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--cream-dark); }
+.svs-row:last-child { border-bottom: none; }
+.svs-rep { font-size: 13px; font-weight: 600; color: var(--text); flex: 1; }
+.svs-rep-vote { font-family: var(--mono); font-size: 10px; font-weight: 700; }
+.svs-rep-vote.yea { color: var(--green); }
+.svs-rep-vote.nay { color: var(--red); }
+.svs-district { font-size: 11px; color: var(--text-muted); }
+.svs-gap { font-family: var(--mono); font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 4px; }
+.svs-gap.aligned { background: #E6F4EC; color: var(--green); }
+.svs-gap.diverged { background: var(--red-bg); color: var(--red); }
+
+/* Fiscal section */
+.spend-bar { height: 10px; border-radius: 5px; overflow: hidden; display: flex; margin-bottom: 8px; }
+.sb-grants { background: #1B4F8A; }
+.sb-admin  { background: #7A97A8; }
+.sb-other  { background: var(--gold); opacity: 0.7; }
+.fiscal-legend { display: flex; gap: 16px; font-size: 11px; color: var(--text-sec); flex-wrap: wrap; }
+.fl-item { display: flex; align-items: center; gap: 6px; }
+.fl-dot  { width: 9px; height: 9px; border-radius: 3px; flex-shrink: 0; }
+
+/* ═══════════════════════════════════════
+   MY REPS PAGE
+═══════════════════════════════════════ */
+#page-reps { max-width: 860px; margin: 0 auto; padding: 28px 40px; }
+.reps-header { margin-bottom: 24px; }
+.reps-title { font-family: var(--display); font-size: 32px; color: var(--text); letter-spacing: -0.02em; margin-bottom: 6px; }
+.reps-sub { font-size: 14px; color: var(--text-muted); }
+.reps-address-bar { display: flex; align-items: center; gap: 10px; background: var(--white); border: 1.5px solid var(--cream-dark); border-radius: 10px; padding: 11px 16px; margin-bottom: 24px; box-shadow: var(--shadow); }
+.reps-address-bar input { flex: 1; border: none; outline: none; font-size: 14px; font-family: var(--body); color: var(--text); }
+.reps-address-bar input::placeholder { color: var(--text-muted); }
+.reps-lookup-btn { background: var(--navy); color: var(--cream); border: none; border-radius: 8px; padding: 8px 16px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+.rep-full-card { background: var(--white); border: 1px solid var(--cream-dark); border-radius: var(--radius); overflow: hidden; margin-bottom: 16px; box-shadow: var(--shadow); }
+.rfc-header { padding: 20px 22px; display: flex; gap: 16px; align-items: center; border-bottom: 1px solid var(--cream-dark); }
+.rfc-avatar { width: 52px; height: 52px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 700; color: white; flex-shrink: 0; }
+.rfc-chamber { font-family: var(--mono); font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 3px; }
+.rfc-name { font-family: var(--display); font-size: 20px; color: var(--text); margin-bottom: 3px; }
+.rfc-detail { font-size: 12px; color: var(--text-sec); }
+.rfc-vote-bar { padding: 14px 22px; border-bottom: 1px solid var(--cream-dark); }
+.rfc-vote-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-sec); margin-bottom: 6px; font-weight: 500; }
+.rfc-mini-bar { display: flex; height: 6px; border-radius: 3px; overflow: hidden; margin-bottom: 6px; background: var(--cream-dark); }
+.rfc-mini-bar .yes-seg { background: var(--green); }
+.rfc-mini-bar .no-seg  { background: var(--red); }
+.rfc-vote-nums { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 9px; }
+.rfc-actions { display: flex; border-bottom: 1px solid var(--cream-dark); }
+.rfc-action { flex: 1; padding: 13px 8px; text-align: center; font-size: 12px; font-weight: 500; color: var(--slate); cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 4px; border-right: 1px solid var(--cream-dark); }
+.rfc-action:last-child { border-right: none; }
+.rfc-action:hover { background: var(--cream); }
+.rfc-action-icon { font-size: 16px; }
+.rfc-contact { padding: 16px 22px; }
+.contact-option { display: flex; align-items: center; gap: 12px; padding: 11px 14px; border-radius: 10px; border: 1.5px solid var(--cream-dark); margin-bottom: 9px; cursor: pointer; transition: border-color 0.15s; }
+.contact-option:hover { border-color: var(--gold); }
+.co-icon { width: 36px; height: 36px; border-radius: 8px; background: var(--cream); display: flex; align-items: center; justify-content: center; font-size: 16px; }
+.co-name { font-size: 13px; font-weight: 600; color: var(--text); flex: 1; }
+.co-val  { font-size: 11px; color: var(--text-muted); font-family: var(--mono); }
+.call-script-btn { width: 100%; background: var(--navy); color: var(--cream); border: none; border-radius: 10px; padding: 13px; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; position: relative; overflow: hidden; }
+.call-script-lock { position: absolute; inset: 0; background: rgba(13,27,42,0.55); display: flex; align-items: center; justify-content: center; gap: 8px; border-radius: 10px; }
+.call-script-lock-text { font-size: 12px; font-weight: 700; color: var(--cream); }
+.call-script-lock-sub  { font-family: var(--mono); font-size: 9px; color: var(--gold); letter-spacing: 0.06em; }
+
+/* ═══════════════════════════════════════
+   DISCUSS PAGE
+═══════════════════════════════════════ */
+#page-discuss { max-width: 1000px; margin: 0 auto; padding: 28px 40px; }
+.discuss-header { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 24px; }
+.discuss-title { font-family: var(--display); font-size: 32px; color: var(--text); letter-spacing: -0.02em; margin-bottom: 6px; }
+.discuss-sub { font-size: 14px; color: var(--text-muted); }
+.discuss-layout { display: grid; grid-template-columns: 1fr 280px; gap: 24px; }
+.thread-card { background: var(--white); border: 1px solid var(--cream-dark); border-radius: var(--radius); overflow: hidden; margin-bottom: 14px; }
+.thread-bill-bar { background: var(--cream); border-bottom: 1px solid var(--cream-dark); padding: 8px 18px; display: flex; align-items: center; gap: 10px; }
+.thread-bill-link { margin-left: auto; font-size: 11px; color: var(--gold); font-weight: 600; cursor: pointer; }
+.thread-body { padding: 18px 20px; }
+.thread-author-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.thread-avatar { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: white; flex-shrink: 0; }
+.thread-author { font-size: 13px; font-weight: 600; color: var(--text); }
+.thread-time { font-size: 10px; color: var(--text-muted); font-family: var(--mono); }
+.thread-stance { margin-left: auto; font-family: var(--mono); font-size: 8px; font-weight: 700; padding: 2px 8px; border-radius: 4px; letter-spacing: 0.08em; text-transform: uppercase; }
+.thread-stance.support { background: var(--green-bg); color: var(--green); }
+.thread-stance.seeking { background: var(--amber-bg); color: var(--amber); }
+.thread-stance.opposed { background: var(--red-bg); color: var(--red); }
+.thread-title { font-size: 15px; font-weight: 700; color: var(--text); line-height: 1.3; margin-bottom: 7px; }
+.thread-text { font-size: 13px; color: var(--text-sec); line-height: 1.6; margin-bottom: 12px; }
+.thread-actions { display: flex; align-items: center; gap: 14px; padding-top: 10px; border-top: 1px solid var(--cream-dark); }
+.thread-action { display: flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 500; color: var(--text-muted); cursor: pointer; }
+.thread-action:hover { color: var(--text); }
+.discuss-sidebar-widget { background: var(--white); border: 1px solid var(--cream-dark); border-radius: var(--radius); padding: 18px 20px; margin-bottom: 16px; }
+.dsw-title { font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 12px; }
+.guideline-item { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-bottom: 1px solid var(--cream-dark); }
+.guideline-item:last-child { border-bottom: none; }
+.guideline-icon { font-size: 15px; flex-shrink: 0; }
+.guideline-text { font-size: 12px; color: var(--text-sec); line-height: 1.5; }
+.trending-item { display: flex; gap: 10px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--cream-dark); cursor: pointer; }
+.trending-item:last-child { border-bottom: none; }
+.trending-num { font-family: var(--mono); font-size: 12px; font-weight: 700; color: var(--gold); width: 18px; text-align: center; }
+.trending-name { font-size: 12px; font-weight: 600; color: var(--text); flex: 1; line-height: 1.3; }
+.trending-count { font-family: var(--mono); font-size: 9px; color: var(--text-muted); }
+
+/* ═══════════════════════════════════════
+   LOCAL COMING SOON
+═══════════════════════════════════════ */
+#page-local { max-width: 700px; margin: 0 auto; padding: 80px 40px; text-align: center; }
+.cs-icon { font-size: 56px; margin-bottom: 20px; }
+.cs-eyebrow { font-family: var(--mono); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--gold); margin-bottom: 14px; }
+.cs-title { font-family: var(--display); font-size: 38px; color: var(--text); letter-spacing: -0.02em; margin-bottom: 14px; line-height: 1.2; }
+.cs-sub { font-size: 15px; color: var(--text-sec); line-height: 1.65; max-width: 480px; margin: 0 auto 32px; }
+.cs-email-wrap { display: flex; gap: 10px; max-width: 380px; margin: 0 auto 24px; }
+.cs-email-input { flex: 1; border: 1.5px solid var(--cream-dark); border-radius: 10px; padding: 11px 14px; font-size: 14px; font-family: var(--body); color: var(--text); outline: none; background: var(--white); }
+.cs-email-input:focus { border-color: var(--gold); }
+.cs-challenges { display: flex; flex-direction: column; gap: 10px; text-align: left; max-width: 440px; margin: 0 auto; }
+.cs-challenge { display: flex; gap: 12px; align-items: flex-start; background: var(--white); border: 1px solid var(--cream-dark); border-radius: 10px; padding: 13px 15px; }
+.cs-challenge-icon { font-size: 18px; flex-shrink: 0; }
+.cs-challenge-title { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 3px; }
+.cs-challenge-text  { font-size: 12px; color: var(--text-muted); line-height: 1.5; }
+
+/* ═══════════════════════════════════════
+   HOW IT WORKS SECTION
+═══════════════════════════════════════ */
+.how-section { background: var(--navy); padding: 64px 40px; }
+.how-inner { max-width: 1304px; margin: 0 auto; }
+.how-head { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 40px; }
+.how-title { font-family: var(--display); font-size: 34px; color: var(--cream); letter-spacing: -0.02em; line-height: 1.2; }
+.how-sub { font-size: 14px; color: rgba(255,255,255,0.4); max-width: 320px; line-height: 1.65; }
+.how-steps { display: grid; grid-template-columns: repeat(4,1fr); gap: 2px; }
+.how-step { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07); padding: 26px 22px; }
+.how-step:first-child { border-radius: 12px 0 0 12px; }
+.how-step:last-child  { border-radius: 0 12px 12px 0; }
+.how-step-num { font-family: var(--display); font-size: 38px; color: rgba(201,168,76,0.18); line-height: 1; margin-bottom: 12px; }
+.how-step-icon { font-size: 22px; margin-bottom: 10px; }
+.how-step-title { font-size: 14px; font-weight: 600; color: var(--cream); margin-bottom: 7px; }
+.how-step-desc { font-size: 12px; line-height: 1.6; color: rgba(255,255,255,0.4); }
+
+/* ═══════════════════════════════════════
+   FOOTER
+═══════════════════════════════════════ */
+.footer { background: var(--navy); padding: 48px 40px 28px; border-top: 1px solid rgba(255,255,255,0.06); }
+.footer-inner { max-width: 1304px; margin: 0 auto; }
+.footer-top { display: grid; grid-template-columns: 1.5fr 1fr 1fr 1fr; gap: 40px; padding-bottom: 36px; border-bottom: 1px solid rgba(255,255,255,0.07); margin-bottom: 24px; }
+.footer-logo { font-family: var(--display); font-size: 18px; color: var(--cream); margin-bottom: 8px; }
+.footer-logo span { color: var(--gold); }
+.footer-tagline { font-size: 12px; color: rgba(255,255,255,0.3); line-height: 1.6; max-width: 220px; }
+.footer-col-title { font-family: var(--mono); font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(255,255,255,0.3); margin-bottom: 12px; }
+.footer-link { display: block; font-size: 12px; color: rgba(255,255,255,0.5); margin-bottom: 7px; cursor: pointer; text-decoration: none; }
+.footer-link:hover { color: var(--cream); }
+.footer-bottom { display: flex; justify-content: space-between; align-items: center; }
+.footer-legal { font-family: var(--mono); font-size: 9px; color: rgba(255,255,255,0.2); letter-spacing: 0.06em; }
+.footer-badges { display: flex; gap: 7px; }
+.footer-badge { font-family: var(--mono); font-size: 8px; letter-spacing: 0.08em; text-transform: uppercase; padding: 3px 9px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.25); }
+
+/* ═══════════════════════════════════════
+   MODAL (upgrade)
+═══════════════════════════════════════ */
+.modal-overlay { position: fixed; inset: 0; background: rgba(13,27,42,0.7); z-index: 500; display: flex; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(4px); }
+.modal-overlay.hidden { display: none; }
+.modal { background: var(--white); border-radius: 20px; padding: 36px; max-width: 440px; width: 100%; box-shadow: 0 24px 80px rgba(0,0,0,0.3); }
+.modal-logo { font-family: var(--display); font-size: 22px; color: var(--text); margin-bottom: 6px; }
+.modal-logo span { color: var(--gold); }
+.modal-plan { font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--gold); margin-bottom: 20px; }
+.modal-title { font-family: var(--display); font-size: 26px; color: var(--text); letter-spacing: -0.02em; margin-bottom: 8px; }
+.modal-sub { font-size: 13px; color: var(--text-sec); line-height: 1.6; margin-bottom: 24px; }
+.modal-price { font-family: var(--mono); font-size: 32px; font-weight: 700; color: var(--text); letter-spacing: -0.03em; margin-bottom: 4px; }
+.modal-price span { font-size: 14px; font-weight: 400; color: var(--text-muted); }
+.modal-features { display: flex; flex-direction: column; gap: 9px; margin-bottom: 24px; }
+.mf-item { display: flex; align-items: flex-start; gap: 10px; font-size: 13px; color: var(--text-sec); line-height: 1.45; }
+.mf-check { color: var(--green); font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+.modal-cta { width: 100%; padding: 14px; background: linear-gradient(135deg,var(--gold),var(--gold-light)); color: var(--navy); font-size: 15px; font-weight: 700; border: none; border-radius: 12px; cursor: pointer; margin-bottom: 10px; }
+.modal-close { width: 100%; padding: 11px; background: transparent; color: var(--text-muted); font-size: 13px; border: 1.5px solid var(--cream-dark); border-radius: 12px; cursor: pointer; }
+</style>
+</head>
+<body>
+
+<!-- ══ NAV ══ -->
+<nav class="nav">
+  <a class="nav-logo" href="#" onclick="showPage('home')">Civic<span>Lens</span></a>
+  <div class="nav-links">
+    <button class="nav-link active" id="nav-feed"    onclick="showPage('home')">Feed</button>
+    <button class="nav-link"        id="nav-reps"    onclick="showPage('reps')">My Reps</button>
+    <button class="nav-link"        id="nav-discuss" onclick="showPage('discuss')">Discuss</button>
+    <button class="nav-link"        id="nav-local"   onclick="showPage('local')">Local</button>
+  </div>
+  <div class="nav-search">
+    <svg width="14" height="14" fill="none" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="m16.5 16.5 4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    <input id="search-input" placeholder="Search bills, topics, sponsors…" oninput="handleSearch(this.value)">
+  </div>
+  <div class="nav-right">
+    <button class="nav-upgrade" onclick="showUpgradeModal()">✨ Civic Pro</button>
+    <button class="nav-signin">Sign In</button>
+  </div>
+</nav>
+
+<!-- ══ HOME PAGE ══ -->
+<div id="page-home" class="page active">
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-left">
+      <div class="hero-eyebrow"><div class="hero-dot"></div> Live · Updated Daily</div>
+      <h1 class="hero-h1">Legislation,<br><em>finally</em> in plain<br>English.</h1>
+      <p class="hero-sub">Every bill passed at the federal and state level — explained clearly. Know what your government is doing, and how it affects you personally.</p>
+      <div class="hero-actions">
+        <button class="btn-primary" onclick="document.querySelector('.search-band').scrollIntoView({behavior:'smooth'})">
+          Explore Recent Bills
+          <svg width="15" height="15" fill="none" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
+        </button>
+        <button class="btn-ghost" onclick="showPage('reps')">Find My Reps</button>
+      </div>
+      <div class="hero-stats">
+        <div><div class="hero-stat-val" id="stat-bills">—</div><div class="hero-stat-label">Bills tracked</div></div>
+        <div><div class="hero-stat-val">50</div><div class="hero-stat-label">States covered</div></div>
+        <div><div class="hero-stat-val">535</div><div class="hero-stat-label">Congress members</div></div>
+        <div><div class="hero-stat-val">Daily</div><div class="hero-stat-label">Data updates</div></div>
+      </div>
+    </div>
+    <div class="hero-right">
+      <div class="hero-card">
+        <div class="hero-card-eyebrow">
+          Featured Bill · S.4821
+          <span class="hero-card-status"><span class="hero-card-dot"></span>Signed into Law</span>
+        </div>
+        <div class="hero-card-title">Rural Broadband Expansion & Digital Equity Act</div>
+        <div class="hero-card-tiles">
+          <div class="hct"><div class="hct-icon">💰</div><div class="hct-label">Funding</div><div class="hct-val">$42B</div></div>
+          <div class="hct"><div class="hct-icon">📅</div><div class="hct-label">Effective</div><div class="hct-val">Jan 2027</div></div>
+          <div class="hct"><div class="hct-icon">🏠</div><div class="hct-label">Homes</div><div class="hct-val">8.5M</div></div>
+        </div>
+        <div class="hero-card-footer">
+          <span>Jun 12, 2026 · Sen. Warner (D-VA)</span>
+          <span class="hero-card-read" onclick="openDemoBill()">Read summary <svg width="12" height="12" fill="none" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg></span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Search band -->
+  <div class="search-band">
+    <div class="search-input-wrap">
+      <svg width="16" height="16" fill="none" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="m16.5 16.5 4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      <input placeholder="Search bills by topic, keyword, bill number, or sponsor…" oninput="handleSearch(this.value)">
+    </div>
+    <div class="search-filters">
+      <div class="filter-pill active" onclick="setFilter('all',this)">All Levels</div>
+      <div class="filter-pill" onclick="setFilter('federal',this)">
+        <span style="width:7px;height:7px;background:#1B4F8A;border-radius:50%;display:inline-block;"></span> Federal
+      </div>
+      <div class="filter-pill" onclick="setFilter('state',this)">
+        <span style="width:7px;height:7px;background:#1A6B3A;border-radius:50%;display:inline-block;"></span> State
+      </div>
+      <div class="filter-pill" onclick="setFilter('recent',this)">📅 This Week</div>
+    </div>
+  </div>
+
+  <!-- Main layout -->
+  <div class="main">
+    <div class="feed-col">
+      <div class="feed-header">
+        <div>
+          <div class="feed-title">Recent Legislation</div>
+          <div class="feed-meta" id="feed-meta-text">Loading…</div>
+        </div>
+        <div class="upgrade-pill" onclick="showUpgradeModal()">
+          <div style="font-size:14px;">✨</div>
+          <div>
+            <div class="upgrade-pill-label">Personalize with Civic Pro</div>
+            <div class="upgrade-pill-sub">See your exact tax cost & local impact</div>
+          </div>
+          <div class="upgrade-pill-btn">Upgrade →</div>
+        </div>
+      </div>
+
+      <!-- Demo banner -->
+      <div class="demo-banner">
+        <span style="font-size:18px;">⚡</span>
+        <span><strong>Live data mode:</strong> Bills load from Congress.gov and LegiScan APIs. Add your API keys in the settings panel below to enable full data. Demo bills shown when keys are absent.</span>
+      </div>
+
+      <!-- Bill feed -->
+      <div id="bill-feed">
+        <div class="loading-wrap">
+          <div class="spinner"></div>
+          <div class="loading-text">Loading legislation…</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+
+      <!-- Rep lookup widget -->
+      <div class="sidebar-widget">
+        <div class="widget-head">
+          <div class="widget-title">My Representatives</div>
+          <div class="widget-link" onclick="showPage('reps')">See all →</div>
+        </div>
+        <div class="widget-body">
+          <div class="rep-lookup-input">
+            <span>📍</span>
+            <input id="sidebar-address" placeholder="Enter your address…" onkeydown="if(event.key==='Enter') lookupRepsFromSidebar()">
+            <button class="rep-lookup-btn" onclick="lookupRepsFromSidebar()">Look up</button>
+          </div>
+          <div id="sidebar-reps">
+            <div class="rep-mini">
+              <div class="rep-avatar R">ML</div>
+              <div style="flex:1"><div class="rep-mini-name">Sen. Mike Lee</div><div class="rep-mini-detail">R · Utah · Senior Senator</div></div>
+              <div class="party-tag R">R</div>
+            </div>
+            <div class="rep-mini">
+              <div class="rep-avatar R">JC</div>
+              <div style="flex:1"><div class="rep-mini-name">Sen. John Curtis</div><div class="rep-mini-detail">R · Utah · Junior Senator</div></div>
+              <div class="party-tag R">R</div>
+            </div>
+            <div class="rep-mini">
+              <div class="rep-avatar R">BM</div>
+              <div style="flex:1"><div class="rep-mini-name">Rep. Blake Moore</div><div class="rep-mini-detail">R · UT-1 · Since 2021</div></div>
+              <div class="party-tag R">R</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- District map widget -->
+      <div class="sidebar-widget">
+        <div class="widget-head"><div class="widget-title">Your District</div></div>
+        <div class="widget-body">
+          <div class="district-map-widget">
+            <svg style="position:absolute;inset:0;width:100%;height:100%;opacity:0.2" viewBox="0 0 300 130"><path d="M30 15 L270 15 L270 105 L220 105 L220 120 L30 120 Z" fill="none" stroke="#C9A84C" stroke-width="1.5" stroke-dasharray="5 4"/><line x1="0" y1="65" x2="300" y2="65" stroke="#C9A84C" stroke-width="1" opacity="0.5"/><line x1="150" y1="0" x2="150" y2="130" stroke="#C9A84C" stroke-width="1" opacity="0.5"/><circle cx="110" cy="70" r="5" fill="#C9A84C" opacity="0.9"/></svg>
+            <div style="z-index:2;text-align:center">
+              <div class="dmw-label" id="district-label">UT-1</div>
+              <div class="dmw-sub">Utah's 1st Congressional District</div>
+            </div>
+          </div>
+          <div style="font-size:12px;color:var(--text-muted);text-align:center;cursor:pointer;color:var(--gold);font-weight:600;">View full district map →</div>
+        </div>
+      </div>
+
+      <!-- Recent activity -->
+      <div class="sidebar-widget">
+        <div class="widget-head"><div class="widget-title">Recent Activity</div></div>
+        <div class="widget-body" id="activity-feed">
+          <div class="activity-item"><div class="activity-dot signed"></div><div><div class="activity-text"><strong>S.4821</strong> signed into law. Rural broadband deployment begins.</div><div class="activity-time">2 hours ago</div></div></div>
+          <div class="activity-item"><div class="activity-dot pending"></div><div><div class="activity-text"><strong>HB 312</strong> passed Utah Senate 22–7, sent to Governor.</div><div class="activity-time">5 hours ago</div></div></div>
+          <div class="activity-item"><div class="activity-dot voted"></div><div><div class="activity-text"><strong>HR 7203</strong> clean energy credits extended through 2035.</div><div class="activity-time">2 days ago</div></div></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-inner">
+      <div class="footer-top">
+        <div>
+          <div class="footer-logo">Civic<span>Lens</span></div>
+          <div class="footer-tagline">Legislation in plain English. Federal and state — all in one place, updated daily.</div>
+        </div>
+        <div>
+          <div class="footer-col-title">Product</div>
+          <a class="footer-link" onclick="showPage('home')">Bill Feed</a>
+          <a class="footer-link" onclick="showPage('reps')">My Representatives</a>
+          <a class="footer-link" onclick="showPage('discuss')">Discussion Board</a>
+          <a class="footer-link" onclick="showPage('local')">Local (Coming Soon)</a>
+        </div>
+        <div>
+          <div class="footer-col-title">Data Sources</div>
+          <a class="footer-link" href="https://api.congress.gov" target="_blank">Congress.gov API</a>
+          <a class="footer-link" href="https://legiscan.com/legiscan-api" target="_blank">LegiScan</a>
+          <a class="footer-link" href="https://developers.google.com/civic-information" target="_blank">Google Civic API</a>
+          <a class="footer-link" href="https://projects.propublica.org/api-docs/congress-api/" target="_blank">ProPublica Congress</a>
+        </div>
+        <div>
+          <div class="footer-col-title">Company</div>
+          <a class="footer-link">About</a>
+          <a class="footer-link">Privacy Policy</a>
+          <a class="footer-link">Terms of Use</a>
+          <a class="footer-link">Contact</a>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <div class="footer-legal">© 2026 Civic Lens · All legislative data sourced from public government records</div>
+        <div class="footer-badges">
+          <div class="footer-badge">Non-partisan</div>
+          <div class="footer-badge">Open Data</div>
+          <div class="footer-badge">No Ads</div>
+        </div>
+      </div>
+    </div>
+  </footer>
+</div>
+
+<!-- ══ BILL DETAIL PAGE ══ -->
+<div id="page-detail" class="page">
+  <button class="detail-back" onclick="showPage('home')">
+    <svg width="16" height="16" fill="none" viewBox="0 0 24 24"><path d="M19 12H5M12 5l-7 7 7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    Back to Feed
+  </button>
+  <div id="detail-content">
+    <div class="loading-wrap"><div class="spinner"></div><div class="loading-text">Loading bill…</div></div>
+  </div>
+</div>
+
+<!-- ══ MY REPS PAGE ══ -->
+<div id="page-reps" class="page">
+  <div id="page-reps-inner">
+  <div class="reps-header">
+    <div class="reps-title">My Representatives</div>
+    <div class="reps-sub">Enter your address to find your federal and state legislators</div>
+  </div>
+  <div class="reps-address-bar">
+    <span>📍</span>
+    <input id="reps-address" placeholder="123 Main St, Salt Lake City, UT 84101" onkeydown="if(event.key==='Enter') lookupReps()">
+    <button class="reps-lookup-btn" onclick="lookupReps()">Find My Reps</button>
+  </div>
+  <div id="reps-results">
+    <!-- Default demo reps -->
+    <div class="rep-full-card">
+      <div class="rfc-header">
+        <div class="rfc-avatar R" style="background:linear-gradient(135deg,#DC2626,#B91C1C)">ML</div>
+        <div style="flex:1">
+          <div class="rfc-chamber">U.S. Senate · Senior Senator · Utah</div>
+          <div class="rfc-name">Mike Lee</div>
+          <div class="rfc-detail">Republican · In office since 2011 · Term ends 2028</div>
+        </div>
+        <div class="party-tag R">R</div>
+      </div>
+      <div class="rfc-vote-bar">
+        <div class="rfc-vote-label"><span>Voting Record — Current Session</span><span style="color:var(--green)">Passed</span></div>
+        <div class="rfc-mini-bar" style="background:var(--cream-dark)">
+          <div class="yes-seg" style="width:62%;background:var(--green)"></div>
+          <div class="no-seg"  style="width:31%;background:var(--red)"></div>
+        </div>
+        <div class="rfc-vote-nums">
+          <span style="color:var(--green)">62% Yea</span><span style="color:var(--red)">31% Nay</span><span style="color:var(--text-muted)">7% Absent</span>
+        </div>
+      </div>
+      <div class="rfc-actions">
+        <div class="rfc-action"><div class="rfc-action-icon">📞</div>Call</div>
+        <div class="rfc-action"><div class="rfc-action-icon">✉️</div>Email</div>
+        <div class="rfc-action"><div class="rfc-action-icon">📊</div>Votes</div>
+        <div class="rfc-action"><div class="rfc-action-icon">💬</div>Discuss</div>
+      </div>
+      <div class="rfc-contact">
+        <div class="contact-option"><div class="co-icon">📞</div><div class="co-name">Capitol Office</div><div class="co-val">(202) 224-5444</div><div>›</div></div>
+        <div class="contact-option"><div class="co-icon">✉️</div><div class="co-name">Web Contact Form</div><div class="co-val">lee.senate.gov/contact</div><div>›</div></div>
+        <button class="call-script-btn">
+          ✨ Generate a Call Script
+          <div class="call-script-lock">
+            <span>🔒</span>
+            <div>
+              <div class="call-script-lock-text">Civic Pro Feature</div>
+              <div class="call-script-lock-sub">UPGRADE TO UNLOCK</div>
+            </div>
+          </div>
+        </button>
+      </div>
+    </div>
+
+    <div class="rep-full-card">
+      <div class="rfc-header">
+        <div class="rfc-avatar R" style="background:linear-gradient(135deg,#DC2626,#B91C1C)">JC</div>
+        <div style="flex:1">
+          <div class="rfc-chamber">U.S. Senate · Junior Senator · Utah</div>
+          <div class="rfc-name">John Curtis</div>
+          <div class="rfc-detail">Republican · In office since 2025 · Term ends 2030</div>
+        </div>
+        <div class="party-tag R">R</div>
+      </div>
+      <div class="rfc-vote-bar">
+        <div class="rfc-vote-label"><span>Voting Record — Current Session</span></div>
+        <div class="rfc-mini-bar" style="background:var(--cream-dark)">
+          <div class="yes-seg" style="width:78%;background:var(--green)"></div>
+          <div class="no-seg"  style="width:19%;background:var(--red)"></div>
+        </div>
+        <div class="rfc-vote-nums">
+          <span style="color:var(--green)">78% Yea</span><span style="color:var(--red)">19% Nay</span><span style="color:var(--text-muted)">3% Absent</span>
+        </div>
+      </div>
+      <div class="rfc-actions">
+        <div class="rfc-action"><div class="rfc-action-icon">📞</div>Call</div>
+        <div class="rfc-action"><div class="rfc-action-icon">✉️</div>Email</div>
+        <div class="rfc-action"><div class="rfc-action-icon">📊</div>Votes</div>
+        <div class="rfc-action"><div class="rfc-action-icon">💬</div>Discuss</div>
+      </div>
+      <div class="rfc-contact">
+        <div class="contact-option"><div class="co-icon">📞</div><div class="co-name">Capitol Office</div><div class="co-val">(202) 224-3702</div><div>›</div></div>
+        <div class="contact-option"><div class="co-icon">✉️</div><div class="co-name">Web Contact Form</div><div class="co-val">curtis.senate.gov/contact</div><div>›</div></div>
+        <button class="call-script-btn">
+          ✨ Generate a Call Script
+          <div class="call-script-lock">
+            <span>🔒</span>
+            <div>
+              <div class="call-script-lock-text">Civic Pro Feature</div>
+              <div class="call-script-lock-sub">UPGRADE TO UNLOCK</div>
+            </div>
+          </div>
+        </button>
+      </div>
+    </div>
+  </div>
+  </div>
+</div>
+
+<!-- ══ DISCUSS PAGE ══ -->
+<div id="page-discuss" class="page">
+  <div id="discuss-inner" style="max-width:1000px;margin:0 auto;padding:28px 40px;">
+    <div class="discuss-header">
+      <div>
+        <div class="discuss-title">Discussion Board</div>
+        <div class="discuss-sub">Every thread is anchored to real legislation. Ask questions, share perspectives, engage.</div>
+      </div>
+      <button class="btn-primary" style="background:var(--navy);color:var(--cream);">
+        <svg width="14" height="14" fill="none" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
+        Start a Discussion
+      </button>
+    </div>
+    <div class="discuss-layout">
+      <div>
+        <!-- Thread 1 -->
+        <div class="thread-card">
+          <div class="thread-bill-bar">
+            <span class="level-badge federal">Federal</span>
+            <span style="font-family:var(--mono);font-size:10px;color:var(--text-muted)">S.4821 · Rural Broadband Expansion Act</span>
+            <span class="thread-bill-link">View bill →</span>
+          </div>
+          <div class="thread-body">
+            <div class="thread-author-row">
+              <div class="thread-avatar" style="background:#7A97A8">SR</div>
+              <div class="thread-author">SarahR_SLC</div>
+              <div class="thread-time">2 hours ago · Utah</div>
+              <div class="thread-stance support">In Support</div>
+            </div>
+            <div class="thread-title">The $30/month price cap is what makes this bill actually meaningful — without it, rural areas would still be priced out.</div>
+            <div class="thread-text">Every previous broadband bill dumped money into ISPs with no accountability. This one finally ties subsidies to affordability benchmarks. The electric co-op eligibility is also a huge deal for rural infrastructure.</div>
+            <div class="thread-actions">
+              <div class="thread-action">👍 147</div>
+              <div class="thread-action">💬 34 replies</div>
+              <div class="thread-action">↑ Share</div>
+            </div>
+          </div>
+        </div>
+        <!-- Thread 2 -->
+        <div class="thread-card">
+          <div class="thread-bill-bar">
+            <span class="level-badge state">State</span>
+            <span style="font-family:var(--mono);font-size:10px;color:var(--text-muted)">HB 312 · Utah Water Rights Modernization Act</span>
+            <span class="thread-bill-link">View bill →</span>
+          </div>
+          <div class="thread-body">
+            <div class="thread-author-row">
+              <div class="thread-avatar" style="background:#C9A84C;color:#0D1B2A">AK</div>
+              <div class="thread-author">AmandaK_Provo</div>
+              <div class="thread-time">5 hours ago · Provo, UT</div>
+              <div class="thread-stance seeking">Seeking Input</div>
+            </div>
+            <div class="thread-title">What does "prioritizing municipal use" actually mean in practice for farmers in central Utah?</div>
+            <div class="thread-text">I want to understand this before forming an opinion. Anyone with agricultural background have context on how priority shifts play out during a drought declaration?</div>
+            <div class="thread-actions">
+              <div class="thread-action">👍 89</div>
+              <div class="thread-action">💬 21 replies</div>
+              <div class="thread-action">↑ Share</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Discuss sidebar -->
+      <div>
+        <div class="discuss-sidebar-widget">
+          <div class="dsw-title">Community Guidelines</div>
+          <div class="guideline-item"><div class="guideline-icon">📖</div><div class="guideline-text"><strong>Ground it in the bill.</strong> Reference specific sections when making claims.</div></div>
+          <div class="guideline-item"><div class="guideline-icon">🤝</div><div class="guideline-text"><strong>Respect different perspectives.</strong> Disagreement is welcome; personal attacks are not.</div></div>
+          <div class="guideline-item"><div class="guideline-icon">🔍</div><div class="guideline-text"><strong>Ask questions freely.</strong> Civic literacy is the goal.</div></div>
+        </div>
+        <div class="discuss-sidebar-widget">
+          <div class="dsw-title">Most Discussed This Week</div>
+          <div class="trending-item"><div class="trending-num">1</div><div><div class="trending-name">Rural Broadband Expansion Act</div><div class="trending-count">S.4821 · 34 threads</div></div></div>
+          <div class="trending-item"><div class="trending-num">2</div><div><div class="trending-name">Utah Water Rights Modernization</div><div class="trending-count">HB 312 · 21 threads</div></div></div>
+          <div class="trending-item"><div class="trending-num">3</div><div><div class="trending-name">Clean Energy Tax Credit Extension</div><div class="trending-count">HR 7203 · 18 threads</div></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ LOCAL (COMING SOON) ══ -->
+<div id="page-local" class="page">
+  <div id="page-local-inner">
+  <div class="cs-icon">🏘️</div>
+  <div class="cs-eyebrow">Coming Soon</div>
+  <h2 class="cs-title">Local legislation is on its way.</h2>
+  <p class="cs-sub">County ordinances, city council votes, and local ballot measures — all in plain English. We're building the infrastructure to track it. Want to know when it launches?</p>
+  <div class="cs-email-wrap">
+    <input class="cs-email-input" placeholder="your@email.com">
+    <button class="btn-primary" style="white-space:nowrap">Notify Me</button>
+  </div>
+  <div style="font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-muted);margin-bottom:20px;">Why is local legislation hard?</div>
+  <div class="cs-challenges">
+    <div class="cs-challenge">
+      <div class="cs-challenge-icon">📄</div>
+      <div><div class="cs-challenge-title">No standard API</div><div class="cs-challenge-text">Federal and state governments have structured data feeds. Local governments mostly publish PDFs to websites with no consistent format.</div></div>
+    </div>
+    <div class="cs-challenge">
+      <div class="cs-challenge-icon">🔄</div>
+      <div><div class="cs-challenge-title">Thousands of jurisdictions</div><div class="cs-challenge-text">There are over 90,000 local government entities in the US, each with its own process for publishing legislative information.</div></div>
+    </div>
+    <div class="cs-challenge">
+      <div class="cs-challenge-icon">🛠️</div>
+      <div><div class="cs-challenge-title">Our approach</div><div class="cs-challenge-text">We're building scrapers and partnering with local government platforms to bring this data in reliably. Starting with top 50 metro areas.</div></div>
+    </div>
+  </div>
+  </div>
+</div>
+
+<!-- ══ UPGRADE MODAL ══ -->
+<div class="modal-overlay hidden" id="upgrade-modal" onclick="if(event.target===this) hideUpgradeModal()">
+  <div class="modal">
+    <div class="modal-logo">Civic<span>Lens</span></div>
+    <div class="modal-plan">✨ Civic Pro</div>
+    <div class="modal-title">Make it personal.</div>
+    <div class="modal-sub">Upgrade to see exactly how each bill affects your household — based on your income, location, and family size.</div>
+    <div class="modal-price">$4.99 <span>/ month · cancel anytime</span></div>
+    <div class="modal-features" style="margin-top:16px;">
+      <div class="mf-item"><span class="mf-check">✓</span>Personalized impact calculations — your exact tax cost & local benefit</div>
+      <div class="mf-item"><span class="mf-check">✓</span>Full depth slider — Analysis and Full Text on every bill</div>
+      <div class="mf-item"><span class="mf-check">✓</span>AI-generated call scripts for contacting your representatives</div>
+      <div class="mf-item"><span class="mf-check">✓</span>Sentiment breakdown by income bracket, party, and district</div>
+      <div class="mf-item"><span class="mf-check">✓</span>Bill alerts — get notified when tracked bills move forward</div>
+      <div class="mf-item"><span class="mf-check">✓</span>Unlimited saved bills and collections</div>
+    </div>
+    <button class="modal-cta">Start 14-Day Free Trial</button>
+    <button class="modal-close" onclick="hideUpgradeModal()">Maybe later — stay on free tier</button>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════
+   CONFIG — add your API keys here
+═══════════════════════════════════════ */
+const CONFIG = {
+  // Get free key at https://api.congress.gov/sign-up/
+  CONGRESS_API_KEY: '8y2Ed4MNOMtC2rGuM6MaBBZKwJmuXub7zBH5J3Ks',
+  // Get free key at https://legiscan.com/legiscan-api
+  LEGISCAN_API_KEY: '',
+  // Get free key at https://developers.google.com/civic-information
+  GOOGLE_CIVIC_KEY: '',
+};
+
+/* ═══════════════════════════════════════
+   STATE
+═══════════════════════════════════════ */
+let currentFilter = 'all';
+let allBills = [];
+let userVotes = JSON.parse(localStorage.getItem('cl_votes') || '{}');
+let savedBills = JSON.parse(localStorage.getItem('cl_saved') || '[]');
+let sentimentData = JSON.parse(localStorage.getItem('cl_sentiment') || '{}');
+
+/* ═══════════════════════════════════════
+   PAGE ROUTER
+═══════════════════════════════════════ */
+function showPage(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+
+  const pageMap = { home: 'page-home', detail: 'page-detail', reps: 'page-reps', discuss: 'page-discuss', local: 'page-local' };
+  const navMap  = { home: 'nav-feed', reps: 'nav-reps', discuss: 'nav-discuss', local: 'nav-local' };
+
+  const el = document.getElementById(pageMap[page]);
+  if (el) { el.classList.add('active'); window.scrollTo(0, 0); }
+  const nav = document.getElementById(navMap[page]);
+  if (nav) nav.classList.add('active');
+}
+
+/* ═══════════════════════════════════════
+   DEMO BILL DATA (shown when no API key)
+═══════════════════════════════════════ */
+const DEMO_BILLS = [
+  {
+    id: 'demo-1', level: 'federal', number: 'S.4821', chamber: 'U.S. Senate',
+    title: 'Rural Broadband Expansion & Digital Equity Act',
+    summary: 'Allocates $42 billion over five years to bring high-speed internet to rural and underserved areas. ISPs must meet affordability benchmarks — including a $30/month price cap for qualifying households — or forfeit federal subsidies.',
+    status: 'signed', statusLabel: 'Signed into Law', date: 'Jun 12, 2026',
+    sponsor: 'Sen. Warner (D-VA)',
+    tldr: 'The government is spending $42 billion to bring fast internet to rural homes. Companies that take the money must keep prices affordable or lose the funding.',
+    fullSummary: 'This law creates a competitive federal grant program administered by the FCC. ISPs and municipal broadband providers can apply for funding to build high-speed infrastructure in unserved and underserved areas.\n\nKey provisions include a mandatory $30/month affordability plan for households earning below 200% of the federal poverty line, deployment deadlines of December 2030, minimum speeds of 100/20 Mbps, and penalties for ISPs that accept funding but fail to meet coverage benchmarks.\n\nRural electric cooperatives are newly eligible to apply — a significant expansion from prior broadband programs. States must submit deployment maps to the FCC within six months of enactment.',
+    tiles: [
+      { icon: '📡', label: 'Avg. Savings', value: 'Up to −$420/yr', sub: 'where ISPs opt in', type: 'positive' },
+      { icon: '🧾', label: 'Avg. Tax Cost', value: '~$28/yr', sub: 'per household nationally', type: '' },
+      { icon: '💰', label: 'Total Funding', value: '$42 Billion', sub: 'over 5 fiscal years', type: 'caution' },
+    ],
+    impactCards: [
+      { icon: '📡', title: 'Home Internet', badge: 'Positive', badgeType: 'positive', num: 'Up to −$420', numSub: '/yr', sub: 'national avg. savings where ISPs opt into the $30/mo cap', cardType: 'positive' },
+      { icon: '🧾', title: 'Tax Impact', badge: 'Minimal', badgeType: 'neutral', num: '~$28', numSub: '/yr', sub: 'estimated indirect cost per household nationally', cardType: '' },
+      { icon: '💰', title: 'Federal Spend', badge: 'Indirect', badgeType: 'caution', num: '$42B', numSub: '', sub: 'over 5 years — funded by discretionary appropriations', cardType: 'caution' },
+    ],
+    voteFor: 68, voteAgainst: 24, voteAbstain: 8,
+    senateYea: 67, senateNay: 31, senateAbs: 2,
+    repVotes: [
+      { initials: 'ML', name: 'Sen. Mike Lee', party: 'R', state: 'Utah', vote: 'nay', color: '#DC2626' },
+      { initials: 'JC', name: 'Sen. John Curtis', party: 'R', state: 'Utah', vote: 'yea', color: '#DC2626' },
+      { initials: 'BM', name: 'Rep. Blake Moore', party: 'R', state: 'UT-1', vote: 'yea', color: '#DC2626' },
+    ],
+    cboTotal: '$42.3B', cboCostPerHH: '$4,976', cboFunded: 'Discretionary Appropriations', cboDeficit: '+$42.3B increase',
+    spendGrants: 52, spendAdmin: 28, spendOther: 20,
+  },
+  {
+    id: 'demo-2', level: 'state', number: 'HB 312', chamber: 'Utah House',
+    title: 'Water Rights Modernization & Drought Resilience Act',
+    summary: "Overhauls Utah's century-old water-right allocation system. During declared drought emergencies, municipal and residential use would be prioritized over agricultural and industrial allocations.",
+    status: 'pending', statusLabel: 'Awaiting Governor', date: 'Jun 10, 2026',
+    sponsor: 'Rep. Thurston (R-UT)',
+    tldr: "Utah's water law hasn't been significantly updated in over 100 years. This bill changes the priority order during droughts so cities and residents get water first.",
+    fullSummary: "HB 312 represents the most significant reform to Utah's water rights system since the 1903 Water Code. Under the bill, the Division of Water Rights gains authority to declare a 'drought emergency allocation event' triggered when the state's reservoir system falls below 40% capacity.\n\nDuring such events, municipal water districts receive priority access, followed by residential users, then commercial, with agricultural and industrial users drawing last. Existing senior water rights holders are entitled to compensation if their allocations are curtailed under the new priority system.\n\nThe bill passed the Utah Senate 22-7 and the House 52-18. Governor Cox has 20 days to sign or veto.",
+    tiles: [
+      { icon: '🚰', label: 'Municipal Water', value: 'Protected', sub: 'prioritized in drought', type: 'positive' },
+      { icon: '🌾', label: 'Food Prices', value: 'May Rise', sub: 'ag cuts affect produce', type: 'caution' },
+      { icon: '📅', label: 'Takes Effect', value: 'If Signed', sub: 'awaiting governor', type: '' },
+    ],
+    impactCards: [
+      { icon: '🚰', title: 'Your Water Access', badge: 'Positive', badgeType: 'positive', num: 'Protected', numSub: '', sub: 'Municipal use prioritized during drought emergencies', cardType: 'positive' },
+      { icon: '🌾', title: 'Food Prices', badge: 'Caution', badgeType: 'caution', num: 'May Rise', numSub: '', sub: 'Agricultural water reductions can affect local produce prices', cardType: 'caution' },
+      { icon: '💧', title: 'Households Covered', badge: 'Indirect', badgeType: 'neutral', num: '3.4M', numSub: '', sub: 'Utah residents protected under the new priority framework', cardType: '' },
+    ],
+    voteFor: 54, voteAgainst: 33, voteAbstain: 13,
+    senateYea: 22, senateNay: 7, senateAbs: 0,
+    repVotes: [
+      { initials: 'ML', name: 'Sen. Mike Lee', party: 'R', state: 'Utah', vote: 'n/a', color: '#DC2626' },
+      { initials: 'JC', name: 'Sen. John Curtis', party: 'R', state: 'Utah', vote: 'n/a', color: '#DC2626' },
+    ],
+    cboTotal: 'N/A', cboCostPerHH: '$0 direct', cboFunded: 'No state spending', cboDeficit: 'Neutral',
+    spendGrants: 0, spendAdmin: 100, spendOther: 0,
+  },
+  {
+    id: 'demo-3', level: 'federal', number: 'HR 7203', chamber: 'U.S. House',
+    title: 'Clean Energy Tax Credit Extension Act',
+    summary: 'Extends and expands the electric vehicle purchase credit, residential solar installation credit, and commercial clean energy investment credits through 2035. Adds new credits for geothermal heat pumps and battery storage systems.',
+    status: 'signed', statusLabel: 'Signed into Law', date: 'Jun 7, 2026',
+    sponsor: 'Rep. Levin (D-CA)',
+    tldr: 'Tax credits for EVs, solar panels, and other clean energy purchases are extended for 9 more years. If you buy an EV or install solar before 2036, you can still claim the credit.',
+    fullSummary: "HR 7203 extends the existing clean energy tax incentive framework established under the Inflation Reduction Act through December 31, 2035. Key credits extended include the §30D electric vehicle credit (up to $7,500 for new EVs), the §25D residential clean energy credit (30% of installation cost for solar, wind, geothermal), and the §48 commercial clean energy investment credit.\n\nNew additions include a 15% credit for residential geothermal heat pump installations and a 10% credit for battery storage systems above 3kWh. Income caps remain in place: the EV credit phases out above $150,000 AGI for individuals and $300,000 for joint filers.\n\nThe Joint Committee on Taxation estimates the 10-year revenue cost at approximately $198 billion.",
+    tiles: [
+      { icon: '⚡', label: 'EV Credit', value: 'Up to $7,500', sub: 'per qualifying vehicle', type: 'positive' },
+      { icon: '☀️', label: 'Solar Credit', value: '30% back', sub: 'on installation costs', type: 'positive' },
+      { icon: '💰', label: 'Revenue Cost', value: '$198B', sub: 'over 10 years', type: 'caution' },
+    ],
+    impactCards: [
+      { icon: '⚡', title: 'EV Purchase Credit', badge: 'Positive', badgeType: 'positive', num: '$7,500', numSub: ' max', sub: 'credit per qualifying electric vehicle purchase through 2035', cardType: 'positive' },
+      { icon: '☀️', title: 'Solar Installation', badge: 'Positive', badgeType: 'positive', num: '30%', numSub: ' back', sub: 'residential solar credit on full installation cost', cardType: 'positive' },
+      { icon: '🧾', title: 'Tax Impact', badge: 'Minimal', badgeType: 'neutral', num: '~$18', numSub: '/yr', sub: 'avg. indirect cost per household over 10-year window', cardType: '' },
+    ],
+    voteFor: 71, voteAgainst: 21, voteAbstain: 8,
+    senateYea: 58, senateNay: 40, senateAbs: 2,
+    repVotes: [
+      { initials: 'ML', name: 'Sen. Mike Lee', party: 'R', state: 'Utah', vote: 'nay', color: '#DC2626' },
+      { initials: 'JC', name: 'Sen. John Curtis', party: 'R', state: 'Utah', vote: 'yea', color: '#DC2626' },
+      { initials: 'BM', name: 'Rep. Blake Moore', party: 'R', state: 'UT-1', vote: 'nay', color: '#DC2626' },
+    ],
+    cboTotal: '$198B', cboCostPerHH: '$18/yr', cboFunded: 'Tax Expenditure', cboDeficit: '+$198B over 10 yrs',
+    spendGrants: 70, spendAdmin: 15, spendOther: 15,
+  }
+];
+
+/* ═══════════════════════════════════════
+   RENDER BILL FEED
+═══════════════════════════════════════ */
+async function loadFeed() {
+  const feed = document.getElementById('bill-feed');
+
+  let bills = [];
+
+  // Try to load from Congress API if key exists
+  if (CONFIG.CONGRESS_API_KEY) {
+    try {
+      bills = await fetchCongressBills();
+    } catch(e) {
+      console.log('Congress API error, falling back to demo:', e);
+    }
+  }
+
+  // Fall back to demo bills
+  if (!bills.length) {
+    bills = DEMO_BILLS;
+  }
+
+  allBills = bills;
+  document.getElementById('feed-meta-text').textContent =
+    `Updated Jun 22, 2026 · ${bills.length} bills loaded · Showing national averages`;
+  document.getElementById('stat-bills').textContent =
+    CONFIG.CONGRESS_API_KEY ? '12,400+' : bills.length + ' (demo)';
+
+  renderBills(bills);
+}
+
+function renderBills(bills) {
+  const feed = document.getElementById('bill-feed');
+  if (!bills.length) {
+    feed.innerHTML = '<div class="loading-wrap"><div class="loading-text">No bills found for this filter.</div></div>';
+    return;
+  }
+  feed.innerHTML = bills.map(b => billRowHTML(b)).join('');
+  initSentimentBars();
+}
+
+function billRowHTML(b) {
+  const statusClass = { signed: 'status-signed', pending: 'status-pending', progress: 'status-progress' }[b.status] || 'status-progress';
+  const tilesHTML = (b.tiles || []).map(t => `
+    <div class="itile ${t.type}">
+      <div class="itile-icon">${t.icon}</div>
+      <div>
+        <div class="itile-label">${t.label}</div>
+        <div class="itile-val">${t.value}</div>
+        <div class="itile-sub">${t.sub}</div>
+      </div>
+    </div>`).join('');
+
+  const userVote = userVotes[b.id];
+  const sentiment = getSentiment(b);
+
+  return `
+  <div class="bill-row" id="row-${b.id}">
+    <div class="bill-row-main" onclick="openBill('${b.id}')">
+      <div class="bill-row-top">
+        <span class="level-badge ${b.level}">${b.level.charAt(0).toUpperCase()+b.level.slice(1)}</span>
+        <span class="bill-num">${b.number} · ${b.chamber}</span>
+        <div class="bill-status ${statusClass}"><div class="status-dot"></div>${b.statusLabel}</div>
+      </div>
+      <div class="bill-title-text">${b.title}</div>
+      <div class="bill-summary-text">${b.summary}</div>
+      <div class="impact-tiles">${tilesHTML}</div>
+      <!-- Sentiment moved to Discussion Board -->
+      <div class="bill-footer" onclick="event.stopPropagation()">
+        <span class="bill-date-label">${b.date}</span>
+        <div class="bill-action">
+          <svg width="13" height="13" fill="none" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3" stroke="currentColor" stroke-width="2"/><circle cx="6" cy="12" r="3" stroke="currentColor" stroke-width="2"/><circle cx="18" cy="19" r="3" stroke="currentColor" stroke-width="2"/><path d="M8.59 13.51l6.83 3.98M15.41 6.51l-6.82 3.98" stroke="currentColor" stroke-width="2"/></svg>
+          Share
+        </div>
+        <div class="bill-action">
+          <svg width="13" height="13" fill="none" viewBox="0 0 24 24"><path d="M18 8h1a4 4 0 0 1 0 8h-1M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8zM6 1v3M10 1v3M14 1v3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          Notify
+        </div>
+        <button class="read-more-pill" onclick="openBill('${b.id}')">
+          Read
+          <svg width="13" height="13" fill="none" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="bill-row-side">
+      <div class="side-btn" onclick="toggleSave('${b.id}',this)">
+        <svg width="15" height="15" fill="none" viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" stroke="${savedBills.includes(b.id)?'#C9A84C':'currentColor'}" stroke-width="2" fill="${savedBills.includes(b.id)?'#C9A84C':'none'}" stroke-linecap="round"/></svg>
+        Save
+      </div>
+    </div>
+  </div>`;
+}
+
+function initSentimentBars() {
+  // bars are already set via inline styles above
+}
+
+/* ═══════════════════════════════════════
+   SENTIMENT / VOTING
+═══════════════════════════════════════ */
+function getSentiment(bill) {
+  const stored = sentimentData[bill.id] || { for: bill.voteFor || 60, against: bill.voteAgainst || 30, abstain: bill.voteAbstain || 10 };
+  const total = stored.for + stored.against + stored.abstain;
+  return {
+    forPct:     Math.round(stored.for / total * 100),
+    againstPct: Math.round(stored.against / total * 100),
+    abstainPct: Math.round(stored.abstain / total * 100),
+    raw: stored
+  };
+}
+
+function castVote(billId, vote, btn) {
+  const bill = allBills.find(b => b.id === billId);
+  if (!bill) return;
+
+  const prev = userVotes[billId];
+  if (!sentimentData[billId]) {
+    sentimentData[billId] = { for: bill.voteFor || 60, against: bill.voteAgainst || 30, abstain: bill.voteAbstain || 10 };
+  }
+  const s = sentimentData[billId];
+
+  // Remove previous vote
+  if (prev) s[prev] = Math.max(0, s[prev] - 1);
+  // Add new vote (toggle if same)
+  if (prev === vote) {
+    delete userVotes[billId];
+  } else {
+    s[vote]++;
+    userVotes[billId] = vote;
+  }
+
+  localStorage.setItem('cl_votes', JSON.stringify(userVotes));
+  localStorage.setItem('cl_sentiment', JSON.stringify(sentimentData));
+
+  // Update UI
+  const sentiment = getSentiment(bill);
+  const bar = document.getElementById(`sent-bar-${billId}`);
+  const counts = document.getElementById(`sent-counts-${billId}`);
+  if (bar) {
+    bar.querySelector('.s-for').style.width = sentiment.forPct + '%';
+    bar.querySelector('.s-against').style.width = sentiment.againstPct + '%';
+    bar.querySelector('.s-abstain').style.width = sentiment.abstainPct + '%';
+  }
+  if (counts) counts.textContent = `${sentiment.forPct}% For · ${sentiment.againstPct}% Against · ${sentiment.abstainPct}% Abstain`;
+
+  // Update button states
+  const row = btn.closest('.sentiment-vote-row');
+  row.querySelectorAll('.vote-btn').forEach(b => b.classList.remove('voted-for','voted-against','voted-abstain'));
+  if (userVotes[billId]) {
+    const activeClass = { for: 'voted-for', against: 'voted-against', abstain: 'voted-abstain' }[userVotes[billId]];
+    btn.classList.add(activeClass);
+  }
+}
+
+/* ═══════════════════════════════════════
+   SAVE
+═══════════════════════════════════════ */
+function toggleSave(billId, btn) {
+  const idx = savedBills.indexOf(billId);
+  if (idx > -1) savedBills.splice(idx, 1);
+  else savedBills.push(billId);
+  localStorage.setItem('cl_saved', JSON.stringify(savedBills));
+  const isSaved = savedBills.includes(billId);
+  btn.querySelector('svg path').setAttribute('stroke', isSaved ? '#C9A84C' : 'currentColor');
+  btn.querySelector('svg path').setAttribute('fill', isSaved ? '#C9A84C' : 'none');
+}
+
+/* ═══════════════════════════════════════
+   BILL DETAIL
+═══════════════════════════════════════ */
+function openBill(id) {
+  const bill = allBills.find(b => b.id === id);
+  if (!bill) return;
+  renderBillDetail(bill);
+  showPage('detail');
+}
+
+function openDemoBill() {
+  openBill('demo-1');
+}
+
+function renderBillDetail(bill) {
+  const sentiment = getSentiment(bill);
+  const userVote = userVotes[bill.id];
+  const statusClass = { signed: 'status-signed', pending: 'status-pending', progress: 'status-progress' }[bill.status] || '';
+
+  const impactCardsHTML = (bill.impactCards || []).map(c => `
+    <div class="impact-card ${c.cardType}">
+      <div class="ic-head">
+        <div class="ic-title-row">
+          <div class="ic-icon">${c.icon}</div>
+          <div class="ic-title">${c.title}</div>
+        </div>
+        <div class="ic-badge ${c.badgeType}">${c.badge}</div>
+      </div>
+      <div class="ic-num">${c.num}<span style="font-size:14px;font-weight:400;">${c.numSub}</span></div>
+      <div class="ic-sub">${c.sub}</div>
+    </div>`).join('');
+
+  const repVotesHTML = (bill.repVotes || []).filter(r => r.vote !== 'n/a').map(r => `
+    <div class="rep-vote-row">
+      <div class="rep-vote-avatar" style="background:${r.color}">${r.initials}</div>
+      <div style="flex:1"><div class="rep-vote-name">${r.name}</div><div class="rep-vote-party">${r.party} · ${r.state}</div></div>
+      <div class="vote-chip ${r.vote}">${r.vote.toUpperCase()}</div>
+    </div>`).join('');
+
+  // Sentiment vs rep comparison
+  const svsRows = (bill.repVotes || []).filter(r => r.vote !== 'n/a').map(r => {
+    const aligned = (r.vote === 'yea' && sentiment.forPct > 50) || (r.vote === 'nay' && sentiment.againstPct > 50);
+    return `
+    <div class="svs-row">
+      <div class="svs-rep">${r.name}</div>
+      <div class="svs-rep-vote ${r.vote === 'yea' ? 'yea' : 'nay'}">${r.vote.toUpperCase()}</div>
+      <div class="svs-district">District: ${sentiment.forPct}% For</div>
+      <div class="svs-gap ${aligned ? 'aligned' : 'diverged'}">${aligned ? 'Aligned' : 'Diverged'}</div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('detail-content').innerHTML = `
+    <div class="detail-header-card">
+      <div class="detail-bill-num">${bill.number} · ${bill.chamber} · ${bill.level.charAt(0).toUpperCase()+bill.level.slice(1)}</div>
+      <div class="detail-title">${bill.title}</div>
+      <div class="detail-meta">
+        <div class="detail-meta-chip"><span>${bill.statusLabel}</span></div>
+        <div class="detail-meta-chip">Sponsored by <span>${bill.sponsor}</span></div>
+        <div class="detail-meta-chip"><span>${bill.date}</span></div>
+      </div>
+    </div>
+
+    <!-- HOW THIS AFFECTS YOU -->
+    <div class="impact-hero">
+      <div class="impact-hero-head">
+        <div class="impact-hero-label">
+          <div class="impact-hero-dot"></div>
+          <div class="impact-hero-title">How This Affects You</div>
+        </div>
+        <div class="impact-hero-avg-tag">National Averages</div>
+      </div>
+      <div class="impact-cards">${impactCardsHTML}</div>
+      <div class="impact-upgrade" onclick="showUpgradeModal()">
+        <div class="iu-icon">✨</div>
+        <div style="flex:1">
+          <div class="iu-title">See your exact numbers with Civic Pro</div>
+          <div class="iu-sub">Enter your income, location & household size for a personalized breakdown</div>
+        </div>
+        <div class="iu-btn">UPGRADE →</div>
+      </div>
+    </div>
+
+    <!-- DEPTH SELECTOR -->
+    <div class="depth-section">
+      <div class="depth-section-label">↕ Adjust Reading Depth</div>
+      <div class="depth-tabs">
+        <div class="depth-tab" onclick="setDepth(this,'tldr','${bill.id}')">30-sec</div>
+        <div class="depth-tab active" onclick="setDepth(this,'summary','${bill.id}')">Summary</div>
+        <div class="depth-tab locked" onclick="showUpgradeModal()">Analysis 🔒</div>
+        <div class="depth-tab locked" onclick="showUpgradeModal()">Full Text 🔒</div>
+      </div>
+    </div>
+
+    <!-- BILL CONTENT -->
+    <div class="detail-section" id="bill-content-${bill.id}">
+      <div class="section-eyebrow">Plain-English Summary</div>
+      <div class="section-body">
+        ${(bill.fullSummary || bill.summary).split('\n\n').map(p => `<p>${p}</p>`).join('')}
+      </div>
+    </div>
+
+    <!-- AT A GLANCE -->
+    <div class="detail-section">
+      <div class="section-eyebrow">At a Glance</div>
+      <div class="glance-grid">
+        ${(bill.tiles || []).map(t => `
+        <div class="glance-card">
+          <div class="glance-icon">${t.icon}</div>
+          <div class="glance-label">${t.label}</div>
+          <div class="glance-val">${t.value}</div>
+        </div>`).join('')}
+        <div class="glance-card">
+          <div class="glance-icon">📅</div>
+          <div class="glance-label">Date</div>
+          <div class="glance-val">${bill.date}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- VOTE RECORD -->
+    <div class="detail-section">
+      <div class="section-eyebrow">${bill.chamber} Vote</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <span style="font-size:13px;color:var(--text-sec);font-weight:500;">${bill.chamber} (${bill.senateYea+bill.senateNay+bill.senateAbs} total)</span>
+        <span style="font-size:13px;font-weight:600;color:var(--green)">Passed</span>
+      </div>
+      <div class="vote-bar-track"><div class="vote-bar-fill" style="width:${Math.round(bill.senateYea/(bill.senateYea+bill.senateNay+bill.senateAbs)*100)}%"></div></div>
+      <div class="vote-tally">
+        <span class="vt-yes">✓ ${bill.senateYea} Yea</span>
+        <span class="vt-no">✗ ${bill.senateNay} Nay</span>
+        <span class="vt-abs">– ${bill.senateAbs} Absent</span>
+      </div>
+    </div>
+
+    <!-- YOUR REPS -->
+    ${repVotesHTML ? `
+    <div class="detail-section">
+      <div class="section-eyebrow">Your Representatives' Votes</div>
+      ${repVotesHTML}
+    </div>` : ''}
+
+    <!-- CIVICLENS SENTIMENT — verified Pro users only -->
+    <div class="detail-section">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+        <div class="section-eyebrow" style="margin-bottom:0;">CivicLens Sentiment</div>
+        <div style="display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:9px;color:var(--text-muted);letter-spacing:0.08em;">
+          <svg width="11" height="11" fill="none" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          VERIFIED USERS ONLY
+        </div>
+      </div>
+      <div style="font-size:12px;color:var(--text-muted);margin-bottom:14px;line-height:1.55;">Sentiment data reflects votes cast by verified Civic Pro members only — not a scientific poll or representative sample of the general public.</div>
+      <div class="sentiment-full-bar">
+        <div class="s-for" style="width:${sentiment.forPct}%"></div>
+        <div class="s-against" style="width:${sentiment.againstPct}%"></div>
+        <div class="s-abstain" style="width:${sentiment.abstainPct}%"></div>
+      </div>
+      <div class="sentiment-legend" style="margin-bottom:16px;">
+        <div class="sl-item"><div class="sl-dot" style="background:var(--green)"></div>${sentiment.forPct}% For</div>
+        <div class="sl-item"><div class="sl-dot" style="background:var(--red)"></div>${sentiment.againstPct}% Against</div>
+        <div class="sl-item"><div class="sl-dot" style="background:var(--cream-deep)"></div>${sentiment.abstainPct}% Abstain</div>
+      </div>
+
+      <!-- Vote gate: shown to non-Pro users -->
+      <div style="background:linear-gradient(135deg,var(--navy),var(--navy-mid));border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px;margin-bottom:0;border:1px solid rgba(201,168,76,0.25);">
+        <div style="width:34px;height:34px;border-radius:8px;background:linear-gradient(135deg,var(--gold),var(--gold-light));display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;">🔒</div>
+        <div style="flex:1;">
+          <div style="font-size:13px;font-weight:700;color:var(--cream);margin-bottom:3px;">Voting is for verified Civic Pro members</div>
+          <div style="font-size:11px;color:rgba(255,255,255,0.45);line-height:1.5;">We require verified accounts to keep CivicLens Sentiment data meaningful and free from bots or coordinated manipulation.</div>
+        </div>
+        <div onclick="showUpgradeModal()" style="background:linear-gradient(135deg,var(--gold),var(--gold-light));color:var(--navy);font-family:var(--mono);font-size:9px;font-weight:700;padding:8px 13px;border-radius:8px;white-space:nowrap;letter-spacing:0.06em;cursor:pointer;">UPGRADE →</div>
+      </div>
+
+      ${svsRows ? `
+      <div class="sentiment-vs" style="margin-top:14px;">
+        <div class="sentiment-vs-title">CivicLens Sentiment vs. Representative Votes</div>
+        ${svsRows}
+      </div>` : ''}
+    </div>
+
+    <!-- FISCAL IMPACT -->
+    <div class="detail-section">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+        <div class="section-eyebrow" style="margin-bottom:0">Fiscal Impact</div>
+        <div style="font-family:var(--mono);font-size:9px;font-weight:600;letter-spacing:0.08em;background:#E8EFF6;color:#1B4F8A;padding:3px 8px;border-radius:4px;text-transform:uppercase;">CBO Estimate</div>
+      </div>
+      <div class="glance-grid" style="margin-bottom:14px;">
+        <div class="glance-card"><div class="glance-icon">💰</div><div class="glance-label">Total Authorized</div><div class="glance-val">${bill.cboTotal}</div></div>
+        <div class="glance-card"><div class="glance-icon">🏠</div><div class="glance-label">Cost per Household</div><div class="glance-val">${bill.cboCostPerHH}</div></div>
+        <div class="glance-card"><div class="glance-icon">📋</div><div class="glance-label">Funded By</div><div class="glance-val">${bill.cboFunded}</div></div>
+        <div class="glance-card"><div class="glance-icon">📊</div><div class="glance-label">Deficit Impact</div><div class="glance-val" style="color:var(--red)">${bill.cboDeficit}</div></div>
+      </div>
+      ${bill.spendGrants ? `
+      <div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:8px;">Spending Breakdown</div>
+      <div class="spend-bar">
+        <div class="sb-grants" style="width:${bill.spendGrants}%"></div>
+        <div class="sb-admin"  style="width:${bill.spendAdmin}%"></div>
+        <div class="sb-other"  style="width:${bill.spendOther}%"></div>
+      </div>
+      <div class="fiscal-legend">
+        <div class="fl-item"><div class="fl-dot" style="background:#1B4F8A"></div>Grants (${bill.spendGrants}%)</div>
+        <div class="fl-item"><div class="fl-dot" style="background:#7A97A8"></div>Administration (${bill.spendAdmin}%)</div>
+        <div class="fl-item"><div class="fl-dot" style="background:var(--gold)"></div>Other (${bill.spendOther}%)</div>
+      </div>` : ''}
+    </div>
+  `;
+}
+
+function castVoteDetail(billId, vote, btn) {
+  castVote(billId, vote, btn);
+  // Re-render just the sentiment section
+  const bill = allBills.find(b => b.id === billId);
+  if (!bill) return;
+  const sentiment = getSentiment(bill);
+  // Update full bar
+  const fullBar = document.querySelector('#page-detail .sentiment-full-bar');
+  if (fullBar) {
+    fullBar.querySelector('.s-for').style.width = sentiment.forPct + '%';
+    fullBar.querySelector('.s-against').style.width = sentiment.againstPct + '%';
+    fullBar.querySelector('.s-abstain').style.width = sentiment.abstainPct + '%';
+  }
+}
+
+function setDepth(tab, level, billId) {
+  if (tab.classList.contains('locked')) return;
+  document.querySelectorAll('.depth-tab').forEach(t => t.classList.remove('active'));
+  tab.classList.add('active');
+  const bill = allBills.find(b => b.id === billId);
+  if (!bill) return;
+  const content = document.getElementById(`bill-content-${billId}`);
+  if (!content) return;
+  if (level === 'tldr') {
+    content.querySelector('.section-eyebrow').textContent = '30-Second Overview';
+    content.querySelector('.section-body').innerHTML = `<p>${bill.tldr}</p>`;
+  } else if (level === 'summary') {
+    content.querySelector('.section-eyebrow').textContent = 'Plain-English Summary';
+    content.querySelector('.section-body').innerHTML = (bill.fullSummary || bill.summary).split('\n\n').map(p => `<p>${p}</p>`).join('');
+  } else if (level === 'analysis') {
+    content.querySelector('.section-eyebrow').textContent = 'Policy Analysis';
+    content.querySelector('.section-body').innerHTML = `
+      <p><strong>What supporters say:</strong> Proponents argue this legislation addresses a long-standing gap that has left millions of Americans without access to affordable, reliable connectivity. The affordability benchmarks in particular represent a meaningful departure from previous broadband bills that provided subsidies without price accountability.</p>
+      <p><strong>What critics say:</strong> Opponents raise concerns about the federal government dictating pricing to private ISPs, arguing this could reduce incentive to invest in rural infrastructure. Some fiscal conservatives object to the $42B price tag without offsetting spending cuts.</p>
+      <p><strong>Independent analysis:</strong> The FCC estimates deployment will reach 85% of targeted areas by 2030 if ISP participation rates match projections. Rural electric cooperatives are seen as a key wildcard — their inclusion could meaningfully accelerate buildout in the most underserved regions.</p>`;
+  } else if (level === 'fulltext') {
+    content.querySelector('.section-eyebrow').textContent = 'Full Legislative Text';
+    content.querySelector('.section-body').innerHTML = `<p style="font-family:var(--mono);font-size:12px;line-height:1.8;color:var(--text-sec);">Full legislative text will be available once connected to the Congress.gov full-text API endpoint. The bill number is <strong>${bill.number}</strong> — you can read the full text now at <a href="https://congress.gov" target="_blank" style="color:var(--gold)">congress.gov</a>.</p>`;
+  }
+}
+
+/* ═══════════════════════════════════════
+   SEARCH & FILTER
+═══════════════════════════════════════ */
+function handleSearch(query) {
+  if (!query.trim()) { renderBills(getFilteredBills()); return; }
+  const q = query.toLowerCase();
+  const filtered = getFilteredBills().filter(b =>
+    b.title.toLowerCase().includes(q) ||
+    b.summary.toLowerCase().includes(q) ||
+    b.number.toLowerCase().includes(q) ||
+    (b.sponsor || '').toLowerCase().includes(q)
+  );
+  renderBills(filtered);
+}
+
+function setFilter(filter, el) {
+  currentFilter = filter;
+  document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  renderBills(getFilteredBills());
+  const searchVal = document.getElementById('search-input')?.value;
+  if (searchVal) handleSearch(searchVal);
+}
+
+function getFilteredBills() {
+  if (currentFilter === 'all') return allBills;
+  if (currentFilter === 'recent') {
+    // Show all demo bills as "recent" for demo purposes
+    return allBills;
+  }
+  return allBills.filter(b => b.level === currentFilter);
+}
+
+/* ═══════════════════════════════════════
+   CONGRESS API (federal bills)
+═══════════════════════════════════════ */
+async function fetchCongressBills() {
+  const url = `https://api.congress.gov/v3/bill?format=json&limit=10&sort=updateDate+desc&api_key=${CONFIG.CONGRESS_API_KEY}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error('Congress API error: ' + res.status);
+  const data = await res.json();
+  return (data.bills || []).map(b => ({
+    id: b.number + '-' + b.congress,
+    level: 'federal',
+    number: b.type + '.' + b.number,
+    chamber: b.originChamber === 'Senate' ? 'U.S. Senate' : 'U.S. House',
+    title: b.title || 'Untitled Bill',
+    summary: b.title || 'Summary not available — click to read more.',
+    status: b.latestAction?.actionDate ? 'progress' : 'pending',
+    statusLabel: b.latestAction?.text?.substring(0, 40) + '…' || 'In Progress',
+    date: b.latestAction?.actionDate || b.updateDate || '',
+    sponsor: b.sponsors?.[0]?.name || 'Unknown sponsor',
+    tldr: b.title,
+    fullSummary: b.title,
+    tiles: [
+      { icon: '🏛️', label: 'Chamber', value: b.originChamber, sub: `Congress ${b.congress}`, type: '' },
+      { icon: '📅', label: 'Last Action', value: b.latestAction?.actionDate || '—', sub: '', type: '' },
+      { icon: '📋', label: 'Type', value: b.type, sub: 'Bill type', type: '' },
+    ],
+    impactCards: [
+      { icon: '🏛️', title: 'Federal Bill', badge: 'National', badgeType: 'neutral', num: b.type, numSub: `.${b.number}`, sub: 'Federal legislation currently in progress', cardType: '' },
+    ],
+    voteFor: 50, voteAgainst: 30, voteAbstain: 20,
+    senateYea: 0, senateNay: 0, senateAbs: 0,
+    repVotes: [],
+    cboTotal: 'TBD', cboCostPerHH: 'TBD', cboFunded: 'TBD', cboDeficit: 'TBD',
+    spendGrants: 0, spendAdmin: 0, spendOther: 0,
+  }));
+}
+
+/* ═══════════════════════════════════════
+   REP LOOKUP (Google Civic API)
+═══════════════════════════════════════ */
+async function lookupReps() {
+  const address = document.getElementById('reps-address').value.trim();
+  if (!address) return alert('Please enter your address');
+  if (!CONFIG.GOOGLE_CIVIC_KEY) {
+    alert('Add your Google Civic Information API key in CONFIG to look up representatives.');
+    return;
+  }
+  const container = document.getElementById('reps-results');
+  container.innerHTML = '<div class="loading-wrap"><div class="spinner"></div><div class="loading-text">Looking up your representatives…</div></div>';
+  try {
+    const url = `https://www.googleapis.com/civicinfo/v2/representatives?address=${encodeURIComponent(address)}&key=${CONFIG.GOOGLE_CIVIC_KEY}`;
+    const res = await fetch(url);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error.message);
+    renderReps(data);
+  } catch(e) {
+    container.innerHTML = `<div class="error-wrap"><div class="error-title">Couldn't look up representatives</div><div class="error-text">${e.message}</div></div>`;
+  }
+}
+
+async function lookupRepsFromSidebar() {
+  const address = document.getElementById('sidebar-address').value.trim();
+  if (!address || !CONFIG.GOOGLE_CIVIC_KEY) return;
+  document.getElementById('reps-address').value = address;
+  showPage('reps');
+  lookupReps();
+}
+
+function renderReps(data) {
+  const container = document.getElementById('reps-results');
+  const officials = data.officials || [];
+  const offices = data.offices || [];
+  let html = '';
+  offices.forEach(office => {
+    (office.officialIndices || []).forEach(idx => {
+      const off = officials[idx];
+      if (!off) return;
+      const party = (off.party || '').includes('Republican') ? 'R' : (off.party || '').includes('Democrat') ? 'D' : '?';
+      const initials = off.name.split(' ').map(n => n[0]).slice(0,2).join('');
+      html += `
+      <div class="rep-full-card">
+        <div class="rfc-header">
+          <div class="rfc-avatar ${party}" style="background:${party==='R'?'linear-gradient(135deg,#DC2626,#B91C1C)':party==='D'?'linear-gradient(135deg,#2563EB,#1D4ED8)':'linear-gradient(135deg,#4A6274,#7A97A8)'}">${initials}</div>
+          <div style="flex:1">
+            <div class="rfc-chamber">${office.name}</div>
+            <div class="rfc-name">${off.name}</div>
+            <div class="rfc-detail">${off.party || 'Unknown party'}</div>
+          </div>
+          <div class="party-tag ${party}">${party}</div>
+        </div>
+        <div class="rfc-actions">
+          ${off.phones?.[0] ? `<div class="rfc-action"><div class="rfc-action-icon">📞</div>Call</div>` : ''}
+          ${off.emails?.[0] ? `<div class="rfc-action"><div class="rfc-action-icon">✉️</div>Email</div>` : ''}
+          ${off.urls?.[0] ? `<div class="rfc-action" onclick="window.open('${off.urls[0]}','_blank')"><div class="rfc-action-icon">🌐</div>Website</div>` : ''}
+          <div class="rfc-action"><div class="rfc-action-icon">📊</div>Votes</div>
+        </div>
+        ${off.phones?.[0] || off.emails?.[0] ? `
+        <div class="rfc-contact">
+          ${off.phones?.[0] ? `<div class="contact-option"><div class="co-icon">📞</div><div class="co-name">Phone</div><div class="co-val">${off.phones[0]}</div></div>` : ''}
+          ${off.urls?.[0] ? `<div class="contact-option"><div class="co-icon">🌐</div><div class="co-name">Website</div><div class="co-val">${off.urls[0].replace('https://','')}</div></div>` : ''}
+          <button class="call-script-btn">
+            ✨ Generate a Call Script
+            <div class="call-script-lock">
+              <span>🔒</span>
+              <div>
+                <div class="call-script-lock-text">Civic Pro Feature</div>
+                <div class="call-script-lock-sub">UPGRADE TO UNLOCK</div>
+              </div>
+            </div>
+          </button>
+        </div>` : ''}
+      </div>`;
+    });
+  });
+  container.innerHTML = html || '<div class="loading-wrap"><div class="loading-text">No representatives found for this address.</div></div>';
+}
+
+/* ═══════════════════════════════════════
+   MODAL
+═══════════════════════════════════════ */
+function showUpgradeModal() {
+  document.getElementById('upgrade-modal').classList.remove('hidden');
+}
+function hideUpgradeModal() {
+  document.getElementById('upgrade-modal').classList.add('hidden');
+}
+
+/* ═══════════════════════════════════════
+   INIT
+═══════════════════════════════════════ */
+document.addEventListener('DOMContentLoaded', () => {
+  loadFeed();
+});
+</script>
+</body>
+</html>
