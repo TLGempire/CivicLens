@@ -1085,7 +1085,7 @@ body { font-family: var(--body); background: var(--cream); color: var(--text); m
     <div class="modal-price">$4.99 <span>/ month · cancel anytime</span></div>
     <div class="modal-features" style="margin-top:16px;">
       <div class="mf-item"><span class="mf-check">✓</span>Personalized impact calculations — your exact tax cost & local benefit</div>
-      <div class="mf-item"><span class="mf-check">✓</span>Full depth slider — Analysis and Full Text on every bill</div>
+      <div class="mf-item"><span class="mf-check">✓</span>Policy Analysis depth — balanced expert context on every bill</div>
       <div class="mf-item"><span class="mf-check">✓</span>AI-generated call scripts for contacting your representatives</div>
       <div class="mf-item"><span class="mf-check">✓</span>Sentiment breakdown by income bracket, party, and district</div>
       <div class="mf-item"><span class="mf-check">✓</span>Bill alerts — get notified when tracked bills move forward</div>
@@ -1324,6 +1324,58 @@ function renderBills(bills) {
   }
   feed.innerHTML = bills.map(b => billRowHTML(b)).join('');
   initSentimentBars();
+  // Load 30-second AI summaries for bills that came from live data
+  loadFeedSummaries(bills);
+}
+
+// Fetch concise 30-second summaries for feed cards.
+// Runs one at a time to avoid hammering the API, and caches via Supabase
+// so repeat visits are instant and free.
+async function loadFeedSummaries(bills) {
+  for (const bill of bills) {
+    if (!bill.needsSummary || bill.summaryLoaded) continue;
+    try {
+      const res = await fetch('/.netlify/functions/summarize-bill', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ billId: bill.id, title: bill.title, text: bill.summary }),
+      });
+      if (!res.ok) continue;
+      const data = await res.json();
+
+      // Store on the bill object
+      bill.tldr = data.tldr || bill.tldr;
+      bill.fullSummary = data.summary || bill.fullSummary;
+      bill.analysis = data.analysis || '';
+      if (data.impactTiles?.length) bill.tiles = data.impactTiles;
+      bill.summaryLoaded = true;
+
+      // Update the feed card's summary line with the 30-second version
+      const el = document.getElementById(`summary-${bill.id}`);
+      if (el && data.tldr) {
+        el.textContent = data.tldr;
+        el.style.transition = 'opacity 0.3s';
+      }
+      // Update the impact tiles if AI returned new ones
+      if (data.impactTiles?.length) {
+        const row = document.getElementById(`row-${bill.id}`);
+        const tilesContainer = row?.querySelector('.impact-tiles');
+        if (tilesContainer) {
+          tilesContainer.innerHTML = data.impactTiles.map(t => `
+            <div class="itile ${t.type||''}">
+              <div class="itile-icon">${t.icon||'📋'}</div>
+              <div>
+                <div class="itile-label">${t.label||''}</div>
+                <div class="itile-val">${t.value||''}</div>
+              </div>
+            </div>`).join('');
+        }
+      }
+    } catch (e) {
+      // Silent fail — card keeps its title as summary
+      console.log('Feed summary skipped for', bill.id, e.message);
+    }
+  }
 }
 
 function billRowHTML(b) {
@@ -1350,7 +1402,7 @@ function billRowHTML(b) {
         <div class="bill-status ${statusClass}"><div class="status-dot"></div>${b.statusLabel}</div>
       </div>
       <div class="bill-title-text">${b.title}</div>
-      <div class="bill-summary-text">${b.summary}</div>
+      <div class="bill-summary-text" id="summary-${b.id}">${b.summaryLoaded ? b.tldr : b.summary}</div>
       <div class="impact-tiles">${tilesHTML}</div>
       <!-- Sentiment moved to Discussion Board -->
       <div class="bill-footer" onclick="event.stopPropagation()">
@@ -1581,7 +1633,7 @@ function renderBillDetail(bill) {
         <div class="depth-tab" onclick="setDepth(this,'tldr','${bill.id}')">30-sec</div>
         <div class="depth-tab active" onclick="setDepth(this,'summary','${bill.id}')">Summary</div>
         <div class="depth-tab locked" onclick="showUpgradeModal()">Analysis 🔒</div>
-        <div class="depth-tab locked" onclick="showUpgradeModal()">Full Text 🔒</div>
+        <div class="depth-tab" onclick="setDepth(this,'fulltext','${bill.id}')">Full Text</div>
       </div>
     </div>
 
@@ -1736,7 +1788,22 @@ function setDepth(tab, level, billId) {
       <p><strong>Independent analysis:</strong> The FCC estimates deployment will reach 85% of targeted areas by 2030 if ISP participation rates match projections. Rural electric cooperatives are seen as a key wildcard — their inclusion could meaningfully accelerate buildout in the most underserved regions.</p>`;
   } else if (level === 'fulltext') {
     content.querySelector('.section-eyebrow').textContent = 'Full Legislative Text';
-    content.querySelector('.section-body').innerHTML = `<p style="font-family:var(--mono);font-size:12px;line-height:1.8;color:var(--text-sec);">Full legislative text will be available once connected to the Congress.gov full-text API endpoint. The bill number is <strong>${bill.number}</strong> — you can read the full text now at <a href="https://congress.gov" target="_blank" style="color:var(--gold)">congress.gov</a>.</p>`;
+    const sourceUrl = bill.level === 'federal'
+      ? `https://www.congress.gov/bill/119th-congress/${bill.chamber.includes('Senate')?'senate-bill':'house-bill'}/${(bill.number||'').replace(/[^0-9]/g,'')}/text`
+      : `https://le.utah.gov/~2026/bills/static/${(bill.number||'').replace(/\s/g,'')}.html`;
+    content.querySelector('.section-body').innerHTML = `
+      <div style="background:var(--cream);border:1px solid var(--cream-dark);border-radius:10px;padding:16px;margin-bottom:12px;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+          <span style="font-size:16px;">📄</span>
+          <span style="font-size:13px;font-weight:600;color:var(--text);">Official Full Text — Free & Public</span>
+        </div>
+        <p style="font-size:13px;color:var(--text-sec);line-height:1.6;margin-bottom:12px;">The complete, unedited legislative text for <strong>${bill.number}</strong> is public record and always free to read. View the official source document below.</p>
+        <a href="${sourceUrl}" target="_blank" style="display:inline-flex;align-items:center;gap:6px;background:var(--navy);color:var(--cream);font-size:13px;font-weight:600;padding:10px 16px;border-radius:8px;text-decoration:none;">
+          Read Official Full Text
+          <svg width="13" height="13" fill="none" viewBox="0 0 24 24"><path d="M7 17L17 7M17 7H7M17 7v10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+      </div>
+      <p style="font-size:11px;color:var(--text-muted);line-height:1.5;">Full text is sourced directly from ${bill.level === 'federal' ? 'Congress.gov' : 'the Utah Legislature'} and is never paywalled.</p>`;
   }
 }
 
