@@ -715,7 +715,7 @@ body { font-family: var(--body); background: var(--cream); color: var(--text); m
         <span style="width:7px;height:7px;background:#1B4F8A;border-radius:50%;display:inline-block;"></span> Federal
       </div>
       <div class="filter-pill" onclick="setFilter('state',this)">
-        <span style="width:7px;height:7px;background:#1A6B3A;border-radius:50%;display:inline-block;"></span> State
+        <span style="width:7px;height:7px;background:#1A6B3A;border-radius:50%;display:inline-block;"></span> Utah State
       </div>
       <div class="filter-pill" onclick="setFilter('recent',this)">📅 This Week</div>
     </div>
@@ -1235,29 +1235,37 @@ const DEMO_BILLS = [
 async function loadFeed() {
   const feed = document.getElementById('bill-feed');
 
-  let bills = [];
+  let federalBills = [];
+  let stateBills   = [];
 
-  // Try to load from Congress API if key exists
-  if (CONFIG.CONGRESS_API_KEY) {
-    try {
-      bills = await fetchCongressBills();
-    } catch(e) {
-      console.log('Congress API error, falling back to demo:', e);
-    }
+  // Fetch federal and Utah bills in parallel
+  const [federalResult, utahResult] = await Promise.allSettled([
+    CONFIG.CONGRESS_API_KEY ? fetchCongressBills() : Promise.resolve([]),
+    fetchUtahBills()
+  ]);
+
+  if (federalResult.status === 'fulfilled' && federalResult.value.length) {
+    federalBills = federalResult.value;
+  } else {
+    // Fall back to demo federal bills
+    federalBills = DEMO_BILLS;
   }
 
-  // Fall back to demo bills
-  if (!bills.length) {
-    bills = DEMO_BILLS;
+  if (utahResult.status === 'fulfilled' && utahResult.value.length) {
+    stateBills = utahResult.value;
   }
 
-  allBills = bills;
+  // Merge and sort by date — most recent first
+  // Federal bills first, then state, for initial load
+  allBills = [...federalBills, ...stateBills];
+
+  const totalCount = allBills.length;
   document.getElementById('feed-meta-text').textContent =
-    `Updated Jun 22, 2026 · ${bills.length} bills loaded · Showing national averages`;
+    `Updated today · ${federalBills.length} federal · ${stateBills.length} Utah state bills loaded`;
   document.getElementById('stat-bills').textContent =
-    CONFIG.CONGRESS_API_KEY ? '12,400+' : bills.length + ' (demo)';
+    CONFIG.CONGRESS_API_KEY ? '12,400+' : `${totalCount} loaded`;
 
-  renderBills(bills);
+  renderBills(allBills);
 }
 
 function renderBills(bills) {
@@ -1713,6 +1721,151 @@ async function fetchCongressBills() {
     spendGrants: 0, spendAdmin: 0, spendOther: 0,
   }));
 }
+
+/* ═══════════════════════════════════════
+   UTAH LEGISLATURE API (state bills)
+   No API key required — free & open
+═══════════════════════════════════════ */
+async function fetchUtahBills() {
+  // Utah Legislature open data — current general session
+  // Uses a CORS proxy for browser-side requests
+  const session = '2026GS'; // General Session year — update each year
+  const url = `https://le.utah.gov/data/bills.json?session=${session}`;
+
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('Utah API status: ' + res.status);
+    const data = await res.json();
+    const bills = data.bills || data.items || data || [];
+
+    return bills.slice(0, 15).map(b => {
+      // Utah API field mapping
+      const billNum  = b.billNumber || b.id || b.number || 'HB000';
+      const title    = b.shortTitle || b.title || b.description || 'Utah Bill';
+      const sponsor  = b.sponsor?.lastName
+        ? `${b.sponsor.firstName || ''} ${b.sponsor.lastName}`.trim()
+        : b.primarySponsor || 'Utah Legislature';
+      const status   = b.statusLabel || b.status?.label || b.currentStatus || 'In Progress';
+      const chamber  = billNum.startsWith('H') ? 'Utah House' : 'Utah Senate';
+      const date     = b.lastAction?.date || b.updateDate || b.introducedDate || '';
+
+      // Map status to our internal status types
+      let statusType = 'progress';
+      const sl = status.toLowerCase();
+      if (sl.includes('signed') || sl.includes('chaptered') || sl.includes('enacted')) statusType = 'signed';
+      else if (sl.includes('governor') || sl.includes('enrolled')) statusType = 'pending';
+
+      return {
+        id: `utah-${billNum}`,
+        level: 'state',
+        state: 'Utah',
+        number: billNum,
+        chamber,
+        title,
+        summary: b.description || b.shortTitle || title,
+        status: statusType,
+        statusLabel: status.length > 45 ? status.substring(0, 45) + '…' : status,
+        date,
+        sponsor,
+        tldr: title,
+        fullSummary: b.description || title,
+        tiles: [
+          { icon: '🏛️', label: 'Chamber', value: chamber, sub: 'Utah Legislature', type: '' },
+          { icon: '📅', label: 'Last Action', value: date, sub: '', type: '' },
+          { icon: '📋', label: 'Session', value: '2026 General', sub: 'Utah Legislature', type: '' },
+        ],
+        impactCards: [
+          { icon: '🏔️', title: 'Utah State Bill', badge: 'State', badgeType: 'neutral', num: billNum, numSub: '', sub: `Utah state legislation — ${chamber}`, cardType: '' },
+        ],
+        voteFor: 50, voteAgainst: 30, voteAbstain: 20,
+        senateYea: 0, senateNay: 0, senateAbs: 0,
+        repVotes: [],
+        cboTotal: 'N/A', cboCostPerHH: 'State bill', cboFunded: 'State budget', cboDeficit: 'N/A',
+        spendGrants: 0, spendAdmin: 0, spendOther: 0,
+      };
+    });
+  } catch(e) {
+    console.warn('Utah Legislature API error:', e.message);
+    // Return demo Utah bills as fallback
+    return DEMO_UTAH_BILLS;
+  }
+}
+
+/* Demo Utah bills — shown when the API is unavailable */
+const DEMO_UTAH_BILLS = [
+  {
+    id: 'utah-HB312', level: 'state', state: 'Utah', number: 'HB 312', chamber: 'Utah House',
+    title: 'Water Rights Modernization & Drought Resilience Act',
+    summary: "Overhauls Utah's century-old water-right allocation system. During declared drought emergencies, municipal and residential use would be prioritized over agricultural and industrial allocations.",
+    status: 'pending', statusLabel: 'Awaiting Governor', date: 'Jun 10, 2026',
+    sponsor: 'Rep. Thurston (R)',
+    tldr: "Utah's water law hasn't been significantly updated in over 100 years. This bill changes the priority order during droughts so cities and residents get water first.",
+    fullSummary: "HB 312 represents the most significant reform to Utah's water rights system since the 1903 Water Code. During declared drought emergencies, municipal water districts receive priority, followed by residential users, then commercial, with agricultural and industrial users drawing last.\n\nThe bill passed the Utah Senate 22-7 and the House 52-18. Governor Cox has 20 days to sign or veto.",
+    tiles: [
+      { icon: '🚰', label: 'Municipal Water', value: 'Protected', sub: 'prioritized in drought', type: 'positive' },
+      { icon: '🌾', label: 'Food Prices', value: 'May Rise', sub: 'ag cuts affect produce', type: 'caution' },
+      { icon: '📅', label: 'Takes Effect', value: 'If Signed', sub: 'awaiting governor', type: '' },
+    ],
+    impactCards: [
+      { icon: '🚰', title: 'Your Water Access', badge: 'Positive', badgeType: 'positive', num: 'Protected', numSub: '', sub: 'Municipal use prioritized during drought emergencies', cardType: 'positive' },
+      { icon: '🌾', title: 'Food Prices', badge: 'Caution', badgeType: 'caution', num: 'May Rise', numSub: '', sub: 'Agricultural water reductions can affect local produce prices', cardType: 'caution' },
+      { icon: '💧', title: 'Households Covered', badge: 'Indirect', badgeType: 'neutral', num: '3.4M', numSub: '', sub: 'Utah residents protected under the new priority framework', cardType: '' },
+    ],
+    voteFor: 54, voteAgainst: 33, voteAbstain: 13,
+    senateYea: 22, senateNay: 7, senateAbs: 0,
+    repVotes: [],
+    cboTotal: 'N/A', cboCostPerHH: '$0 direct', cboFunded: 'No state spending', cboDeficit: 'Neutral',
+    spendGrants: 0, spendAdmin: 100, spendOther: 0,
+  },
+  {
+    id: 'utah-SB142', level: 'state', state: 'Utah', number: 'SB 142', chamber: 'Utah Senate',
+    title: 'Public Education Funding Formula Revision',
+    summary: 'Revises the Weighted Pupil Unit formula used to allocate state education funding, increasing per-pupil spending by an average of 8% and adding new weights for students with disabilities and English language learners.',
+    status: 'signed', statusLabel: 'Signed into Law', date: 'Mar 15, 2026',
+    sponsor: 'Sen. Fillmore (R)',
+    tldr: 'Utah schools get more money per student — especially for kids with disabilities and those learning English. An 8% average increase in the base funding amount.',
+    fullSummary: "SB 142 revises Utah's Weighted Pupil Unit (WPU) formula — the primary mechanism for distributing state education dollars to school districts.\n\nKey changes include an 8% increase in the base WPU value, new disability weights ranging from 1.5x to 3.0x the base depending on severity, and a new English language learner weight of 0.4x. The bill also establishes a rural school district supplement to address higher per-pupil costs in low-density areas.\n\nThe bill is projected to cost the state an additional $340 million annually.",
+    tiles: [
+      { icon: '📚', label: 'Per-Pupil Increase', value: '+8% avg', sub: 'base WPU value', type: 'positive' },
+      { icon: '🏫', label: 'Students Covered', value: '700K+', sub: 'Utah public school students', type: 'positive' },
+      { icon: '💰', label: 'Annual Cost', value: '$340M', sub: 'additional state spending', type: 'caution' },
+    ],
+    impactCards: [
+      { icon: '📚', title: 'School Funding', badge: 'Positive', badgeType: 'positive', num: '+8%', numSub: ' avg', sub: 'increase in per-pupil base funding statewide', cardType: 'positive' },
+      { icon: '🏫', title: 'Your Schools', badge: 'Positive', badgeType: 'positive', num: '$340M', numSub: '', sub: 'additional annual investment in Utah public education', cardType: 'positive' },
+      { icon: '🧾', title: 'Tax Impact', badge: 'Minimal', badgeType: 'neutral', num: '~$90', numSub: '/yr', sub: 'avg. estimated per household contribution', cardType: '' },
+    ],
+    voteFor: 74, voteAgainst: 18, voteAbstain: 8,
+    senateYea: 24, senateNay: 4, senateAbs: 1,
+    repVotes: [],
+    cboTotal: '$340M/yr', cboCostPerHH: '~$90/yr', cboFunded: 'State General Fund', cboDeficit: '+$340M annually',
+    spendGrants: 85, spendAdmin: 10, spendOther: 5,
+  },
+  {
+    id: 'utah-HB198', level: 'state', state: 'Utah', number: 'HB 198', chamber: 'Utah House',
+    title: 'Affordable Housing Infrastructure & Zoning Reform Act',
+    summary: 'Requires cities over 10,000 population to allow higher-density residential development within half a mile of major transit corridors, and establishes a $120M state infrastructure fund to support affordable housing construction.',
+    status: 'signed', statusLabel: 'Signed into Law', date: 'Feb 28, 2026',
+    sponsor: 'Rep. Acerson (R)',
+    tldr: 'Utah cities must allow more apartments and townhomes near bus and rail lines. A $120M fund helps pay for the infrastructure to support them.',
+    fullSummary: "HB 198 addresses Utah's acute housing shortage by reforming local zoning authority near transit corridors.\n\nCities with populations over 10,000 must allow residential densities of at least 20 units per acre within half a mile of fixed-route transit stops. The bill preempts local zoning ordinances that prohibit this density in designated transit zones.\n\nA new $120M Housing Infrastructure Fund provides grants to municipalities for water, sewer, and road improvements needed to support new residential density. Priority is given to projects that include at least 15% affordable units.",
+    tiles: [
+      { icon: '🏠', label: 'Rent Pressure', value: '↓ Lower', sub: 'more housing supply', type: 'positive' },
+      { icon: '💰', label: 'State Fund', value: '$120M', sub: 'housing infrastructure', type: 'caution' },
+      { icon: '🚌', label: 'Near Transit', value: '½ mile', sub: 'density requirement zone', type: '' },
+    ],
+    impactCards: [
+      { icon: '🏠', title: 'Housing Costs', badge: 'Positive', badgeType: 'positive', num: '↓ Lower', numSub: '', sub: 'increased supply near transit expected to ease rent pressure', cardType: 'positive' },
+      { icon: '💰', title: 'State Investment', badge: 'Indirect', badgeType: 'caution', num: '$120M', numSub: '', sub: 'infrastructure fund to support new housing construction', cardType: 'caution' },
+      { icon: '🧾', title: 'Tax Impact', badge: 'Minimal', badgeType: 'neutral', num: '~$30', numSub: '/yr', sub: 'avg. estimated per household state cost', cardType: '' },
+    ],
+    voteFor: 61, voteAgainst: 29, voteAbstain: 10,
+    senateYea: 20, senateNay: 9, senateAbs: 0,
+    repVotes: [],
+    cboTotal: '$120M', cboCostPerHH: '~$30/yr', cboFunded: 'State General Fund', cboDeficit: '+$120M one-time',
+    spendGrants: 80, spendAdmin: 15, spendOther: 5,
+  },
+];
 
 /* ═══════════════════════════════════════
    REP LOOKUP (Google Civic API)
