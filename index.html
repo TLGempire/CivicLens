@@ -739,12 +739,6 @@ body { font-family: var(--body); background: var(--cream); color: var(--text); m
         </div>
       </div>
 
-      <!-- Demo banner -->
-      <div class="demo-banner">
-        <span style="font-size:18px;">⚡</span>
-        <span><strong>Live data mode:</strong> Bills load from Congress.gov and LegiScan APIs. Add your API keys in the settings panel below to enable full data. Demo bills shown when keys are absent.</span>
-      </div>
-
       <!-- Bill feed -->
       <div id="bill-feed">
         <div class="loading-wrap">
@@ -1108,7 +1102,7 @@ body { font-family: var(--body); background: var(--cream); color: var(--text); m
 ═══════════════════════════════════════ */
 const CONFIG = {
   // Get free key at https://api.congress.gov/sign-up/
-  CONGRESS_API_KEY: '8y2Ed4MNOMtC2rGuM6MaBBZKwJmuXub7zBH5J3Ks',
+  CONGRESS_API_KEY: '',
   // Get free key at https://legiscan.com/legiscan-api
   LEGISCAN_API_KEY: '',
   // Get free key at https://developers.google.com/civic-information
@@ -1237,35 +1231,89 @@ async function loadFeed() {
 
   let federalBills = [];
   let stateBills   = [];
+  let usedBackend  = false;
 
-  // Fetch federal and Utah bills in parallel
-  const [federalResult, utahResult] = await Promise.allSettled([
-    CONFIG.CONGRESS_API_KEY ? fetchCongressBills() : Promise.resolve([]),
-    fetchUtahBills()
-  ]);
+  // ── Try the Netlify Function first (production path) ──
+  // This solves CORS and keeps API keys secure on the server.
+  try {
+    const res = await fetch('/.netlify/functions/fetch-bills');
+    if (res.ok) {
+      const data = await res.json();
+      usedBackend = true;
+      if (data.federal?.length) {
+        federalBills = data.federal.map(mapFederalBill);
+      }
+      if (data.utah?.length) {
+        stateBills = data.utah.map(mapUtahBill);
+      }
+    }
+  } catch (e) {
+    console.log('Netlify function not available (probably local testing). Using fallback.', e.message);
+  }
 
-  if (federalResult.status === 'fulfilled' && federalResult.value.length) {
-    federalBills = federalResult.value;
-  } else {
-    // Fall back to demo federal bills
+  // ── Fallback for local testing (no backend) ──
+  if (!federalBills.length) {
     federalBills = DEMO_BILLS;
   }
-
-  if (utahResult.status === 'fulfilled' && utahResult.value.length) {
-    stateBills = utahResult.value;
+  if (!stateBills.length) {
+    stateBills = DEMO_UTAH_BILLS;
   }
 
-  // Merge and sort by date — most recent first
-  // Federal bills first, then state, for initial load
   allBills = [...federalBills, ...stateBills];
 
   const totalCount = allBills.length;
   document.getElementById('feed-meta-text').textContent =
-    `Updated today · ${federalBills.length} federal · ${stateBills.length} Utah state bills loaded`;
+    usedBackend
+      ? `Live data · ${federalBills.length} federal · ${stateBills.length} Utah state bills`
+      : `Demo mode · ${totalCount} sample bills · Deploy to Netlify for live data`;
   document.getElementById('stat-bills').textContent =
-    CONFIG.CONGRESS_API_KEY ? '12,400+' : `${totalCount} loaded`;
+    usedBackend ? '12,400+' : `${totalCount} demo`;
 
   renderBills(allBills);
+}
+
+// Map raw federal bill from backend into our display format
+function mapFederalBill(b) {
+  return {
+    id: b.id, level: 'federal', number: b.number, chamber: b.chamber,
+    title: b.title, summary: b.summary, status: b.status, statusLabel: b.statusLabel,
+    date: b.date, sponsor: b.sponsor, tldr: b.title, fullSummary: b.summary,
+    tiles: [
+      { icon: '🏛️', label: 'Chamber', value: b.chamber.replace('U.S. ',''), sub: 'Federal', type: '' },
+      { icon: '📅', label: 'Last Action', value: b.date || '—', sub: '', type: '' },
+      { icon: '📋', label: 'Bill', value: b.number, sub: 'Federal', type: '' },
+    ],
+    impactCards: [
+      { icon: '🏛️', title: 'Federal Bill', badge: 'National', badgeType: 'neutral', num: b.number, numSub: '', sub: 'Federal legislation — tap to load AI summary', cardType: '' },
+    ],
+    voteFor: 50, voteAgainst: 30, voteAbstain: 20,
+    senateYea: 0, senateNay: 0, senateAbs: 0, repVotes: [],
+    cboTotal: 'TBD', cboCostPerHH: 'TBD', cboFunded: 'TBD', cboDeficit: 'TBD',
+    spendGrants: 0, spendAdmin: 0, spendOther: 0,
+    needsSummary: true,
+  };
+}
+
+// Map raw Utah bill from backend into our display format
+function mapUtahBill(b) {
+  return {
+    id: b.id, level: 'state', state: 'Utah', number: b.number, chamber: b.chamber,
+    title: b.title, summary: b.summary || b.title, status: b.status, statusLabel: b.statusLabel,
+    date: b.date, sponsor: b.sponsor, tldr: b.title, fullSummary: b.summary || b.title,
+    tiles: [
+      { icon: '🏔️', label: 'Chamber', value: b.chamber.replace('Utah ',''), sub: 'Utah', type: '' },
+      { icon: '📅', label: 'Last Action', value: b.date || '—', sub: '', type: '' },
+      { icon: '📋', label: 'Bill', value: b.number, sub: 'Utah State', type: '' },
+    ],
+    impactCards: [
+      { icon: '🏔️', title: 'Utah State Bill', badge: 'State', badgeType: 'neutral', num: b.number, numSub: '', sub: 'Utah legislation — tap to load AI summary', cardType: '' },
+    ],
+    voteFor: 50, voteAgainst: 30, voteAbstain: 20,
+    senateYea: 0, senateNay: 0, senateAbs: 0, repVotes: [],
+    cboTotal: 'N/A', cboCostPerHH: 'State bill', cboFunded: 'State budget', cboDeficit: 'N/A',
+    spendGrants: 0, spendAdmin: 0, spendOther: 0,
+    needsSummary: true,
+  };
 }
 
 function renderBills(bills) {
@@ -1412,6 +1460,46 @@ function openBill(id) {
   if (!bill) return;
   renderBillDetail(bill);
   showPage('detail');
+
+  // If this bill needs an AI summary (came from live API), fetch it now
+  if (bill.needsSummary && !bill.summaryLoaded) {
+    loadBillSummary(bill);
+  }
+}
+
+// Fetch an AI-generated summary from the Netlify function (which uses Claude + caches in Supabase)
+async function loadBillSummary(bill) {
+  const contentEl = document.getElementById(`bill-content-${bill.id}`);
+  if (contentEl) {
+    contentEl.querySelector('.section-body').innerHTML =
+      '<div style="display:flex;align-items:center;gap:10px;color:var(--text-muted);font-size:13px;"><div class="spinner" style="width:18px;height:18px;border-width:2px;"></div> Generating plain-English summary…</div>';
+  }
+  try {
+    const res = await fetch('/.netlify/functions/summarize-bill', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ billId: bill.id, title: bill.title, text: bill.summary }),
+    });
+    if (!res.ok) throw new Error('Summary request failed');
+    const data = await res.json();
+
+    // Update the bill object with AI content
+    bill.tldr = data.tldr || bill.tldr;
+    bill.fullSummary = data.summary || bill.fullSummary;
+    bill.summary = data.summary || bill.summary;
+    bill.analysis = data.analysis || '';
+    if (data.impactTiles?.length) bill.tiles = data.impactTiles;
+    bill.summaryLoaded = true;
+
+    // Re-render the detail page with the new content
+    renderBillDetail(bill);
+  } catch (e) {
+    console.log('Summary not available (local testing or API issue):', e.message);
+    if (contentEl) {
+      contentEl.querySelector('.section-body').innerHTML =
+        (bill.fullSummary || bill.summary).split('\n\n').map(p => `<p>${p}</p>`).join('');
+    }
+  }
 }
 
 function openDemoBill() {
