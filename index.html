@@ -1231,45 +1231,89 @@ async function loadFeed() {
 
   let federalBills = [];
   let stateBills   = [];
-  let usedBackend  = false;
+  let source       = 'demo';
 
-  // ── Try the Netlify Function first (production path) ──
-  // This solves CORS and keeps API keys secure on the server.
+  // ── 1. Try reading pre-loaded bills from Supabase (fast, free) ──
   try {
-    const res = await fetch('/.netlify/functions/fetch-bills');
+    const res = await fetch('/.netlify/functions/get-bills');
     if (res.ok) {
       const data = await res.json();
-      usedBackend = true;
-      if (data.federal?.length) {
-        federalBills = data.federal.map(mapFederalBill);
-      }
-      if (data.utah?.length) {
-        stateBills = data.utah.map(mapUtahBill);
+      if ((data.federal?.length || data.utah?.length)) {
+        federalBills = (data.federal || []).map(mapStoredBill);
+        stateBills   = (data.utah || []).map(mapStoredBill);
+        source = 'supabase';
       }
     }
   } catch (e) {
-    console.log('Netlify function not available (probably local testing). Using fallback.', e.message);
+    console.log('get-bills not available:', e.message);
   }
 
-  // ── Fallback for local testing (no backend) ──
-  if (!federalBills.length) {
-    federalBills = DEMO_BILLS;
+  // ── 2. If cache empty (e.g. first run before daily-ingest), fetch live ──
+  if (!federalBills.length && !stateBills.length) {
+    try {
+      const res = await fetch('/.netlify/functions/fetch-bills');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.federal?.length) federalBills = data.federal.map(mapFederalBill);
+        if (data.utah?.length)    stateBills   = data.utah.map(mapUtahBill);
+        if (federalBills.length || stateBills.length) source = 'live';
+      }
+    } catch (e) {
+      console.log('fetch-bills not available:', e.message);
+    }
   }
-  if (!stateBills.length) {
-    stateBills = DEMO_UTAH_BILLS;
-  }
+
+  // ── 3. Final fallback — demo bills for local testing ──
+  if (!federalBills.length) federalBills = DEMO_BILLS;
+  if (!stateBills.length)   stateBills   = DEMO_UTAH_BILLS;
 
   allBills = [...federalBills, ...stateBills];
 
   const totalCount = allBills.length;
-  document.getElementById('feed-meta-text').textContent =
-    usedBackend
-      ? `Live data · ${federalBills.length} federal · ${stateBills.length} Utah state bills`
-      : `Demo mode · ${totalCount} sample bills · Deploy to Netlify for live data`;
+  const sourceLabel = {
+    supabase: `Live data · ${federalBills.length} federal · ${stateBills.length} Utah state bills`,
+    live:     `Live data (first load) · ${federalBills.length} federal · ${stateBills.length} Utah`,
+    demo:     `Demo mode · ${totalCount} sample bills`,
+  }[source];
+  document.getElementById('feed-meta-text').textContent = sourceLabel;
   document.getElementById('stat-bills').textContent =
-    usedBackend ? '12,400+' : `${totalCount} demo`;
+    source === 'demo' ? `${totalCount} demo` : '12,400+';
 
   renderBills(allBills);
+}
+
+// Map a bill already stored in Supabase (summary pre-generated) into display format
+function mapStoredBill(b) {
+  return {
+    id: b.id,
+    level: b.level,
+    state: b.level === 'state' ? 'Utah' : undefined,
+    number: b.number,
+    chamber: b.chamber,
+    title: b.title,
+    summary: b.tldr || b.summary || b.title,   // feed shows the 30-sec tldr
+    status: b.status || 'progress',
+    statusLabel: b.status_label || 'In Progress',
+    date: b.date || '',
+    sponsor: b.sponsor || '',
+    tldr: b.tldr || b.title,
+    fullSummary: b.full_summary || b.summary || b.title,
+    analysis: b.analysis || '',
+    tiles: (b.tiles && b.tiles.length) ? b.tiles : [
+      { icon: b.level === 'federal' ? '🏛️' : '🏔️', label: 'Bill', value: b.number, sub: b.level === 'federal' ? 'Federal' : 'Utah', type: '' },
+      { icon: '📅', label: 'Last Action', value: b.date || '—', sub: '', type: '' },
+      { icon: '📋', label: 'Chamber', value: (b.chamber||'').replace(/U\.S\. |Utah /,''), sub: '', type: '' },
+    ],
+    impactCards: [
+      { icon: b.level === 'federal' ? '🏛️' : '🏔️', title: b.level === 'federal' ? 'Federal Bill' : 'Utah State Bill', badge: b.level === 'federal' ? 'National' : 'State', badgeType: 'neutral', num: b.number, numSub: '', sub: b.summary ? b.summary.substring(0,80)+'…' : 'Legislation', cardType: '' },
+    ],
+    voteFor: 50, voteAgainst: 30, voteAbstain: 20,
+    senateYea: 0, senateNay: 0, senateAbs: 0, repVotes: [],
+    cboTotal: b.cbo_total || 'TBD', cboCostPerHH: 'TBD', cboFunded: 'TBD', cboDeficit: 'TBD',
+    spendGrants: 0, spendAdmin: 0, spendOther: 0,
+    summaryLoaded: true,   // already has summary from Supabase
+    needsSummary: false,
+  };
 }
 
 // Map raw federal bill from backend into our display format
