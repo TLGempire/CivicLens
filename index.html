@@ -165,6 +165,38 @@ body { font-family: var(--body); background: var(--cream); color: var(--text); m
 .hero-card-footer { display: flex; align-items: center; justify-content: space-between; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.08); font-family: var(--mono); font-size: 10px; color: rgba(255,255,255,0.3); }
 .hero-card-read { color: var(--gold); font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 5px; }
 
+/* Hero reps lookup box */
+.hero-reps-lookup {
+  display: flex; align-items: center; gap: 8px;
+  background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 8px; padding: 9px 12px; margin-bottom: 14px;
+}
+.hero-reps-lookup input {
+  flex: 1; background: none; border: none; outline: none;
+  color: var(--cream); font-size: 13px; font-family: var(--body);
+}
+.hero-reps-lookup input::placeholder { color: rgba(255,255,255,0.4); }
+.hero-reps-lookup button {
+  background: var(--gold); color: var(--navy); border: none; border-radius: 6px;
+  padding: 5px 11px; font-size: 11px; font-weight: 700; cursor: pointer; white-space: nowrap;
+}
+.hero-rep-row {
+  display: flex; align-items: center; gap: 11px; padding: 9px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.08); cursor: pointer;
+}
+.hero-rep-row:last-child { border-bottom: none; }
+.hero-rep-avatar {
+  width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center;
+  justify-content: center; font-size: 11px; font-weight: 700; color: white; flex-shrink: 0;
+}
+.hero-rep-avatar.R { background: linear-gradient(135deg,#DC2626,#B91C1C); }
+.hero-rep-avatar.D { background: linear-gradient(135deg,#2563EB,#1D4ED8); }
+.hero-rep-name { font-size: 13px; font-weight: 600; color: var(--cream); }
+.hero-rep-detail { font-size: 11px; color: rgba(255,255,255,0.4); margin-top: 1px; }
+.hero-party-tag { font-family: var(--mono); font-size: 8px; font-weight: 700; padding: 2px 7px; border-radius: 4px; letter-spacing: 0.08em; }
+.hero-party-tag.R { background: rgba(220,38,38,0.25); color: #FCA5A5; }
+.hero-party-tag.D { background: rgba(37,99,235,0.25); color: #93C5FD; }
+
 /* ═══════════════════════════════════════
    SEARCH BAND
 ═══════════════════════════════════════ */
@@ -637,6 +669,112 @@ body { font-family: var(--body); background: var(--cream); color: var(--text); m
 .mf-check { color: var(--green); font-weight: 700; flex-shrink: 0; margin-top: 1px; }
 .modal-cta { width: 100%; padding: 14px; background: linear-gradient(135deg,var(--gold),var(--gold-light)); color: var(--navy); font-size: 15px; font-weight: 700; border: none; border-radius: 12px; cursor: pointer; margin-bottom: 10px; }
 .modal-close { width: 100%; padding: 11px; background: transparent; color: var(--text-muted); font-size: 13px; border: 1.5px solid var(--cream-dark); border-radius: 12px; cursor: pointer; }
+
+/* ═══════════════════════════════════════
+   RESPONSIVE — TABLET
+═══════════════════════════════════════ */
+@media (max-width: 1024px) {
+  .hero {
+    grid-template-columns: 1fr;
+    gap: 32px;
+    padding: 48px 28px 0;
+  }
+  .hero-left { padding-bottom: 0; }
+  .hero-h1 { font-size: 44px; }
+  .hero-right { align-self: stretch; margin-bottom: -1px; }
+  .hero-card { border-radius: 16px; }
+  .main { grid-template-columns: 1fr; padding: 28px; }
+  .sidebar { order: -1; }
+  .nav { padding: 0 24px; gap: 18px; }
+  .nav-search { max-width: 200px; }
+  #page-detail, #page-reps, #page-discuss { padding: 24px 28px; }
+  .discuss-layout { grid-template-columns: 1fr; }
+}
+
+/* ═══════════════════════════════════════
+   RESPONSIVE — MOBILE
+═══════════════════════════════════════ */
+@media (max-width: 680px) {
+  /* Nav becomes compact */
+  .nav { height: auto; flex-wrap: wrap; padding: 10px 16px; gap: 10px; }
+  .nav-logo { font-size: 18px; }
+  .nav-links { order: 3; width: 100%; overflow-x: auto; gap: 2px; -webkit-overflow-scrolling: touch; }
+  .nav-links::-webkit-scrollbar { display: none; }
+  .nav-link { white-space: nowrap; font-size: 13px; padding: 7px 11px; }
+  .nav-search { order: 2; max-width: none; flex: 1; min-width: 0; }
+  .nav-right { order: 1; margin-left: auto; }
+  .nav-upgrade { font-size: 11px; padding: 6px 11px; }
+  .nav-signin { font-size: 12px; padding: 6px 11px; }
+
+  /* Hero */
+  .hero { padding: 32px 18px 0; gap: 24px; }
+  .hero-h1 { font-size: 34px; }
+  .hero-sub { font-size: 15px; }
+  .hero-actions { flex-wrap: wrap; }
+  .hero-actions button { flex: 1; justify-content: center; min-width: 140px; }
+  .hero-stats { gap: 20px; flex-wrap: wrap; }
+  .hero-stat-val { font-size: 22px; }
+
+  /* Search band stacks */
+  .search-band { flex-direction: column; align-items: stretch; padding: 14px 18px; gap: 10px; }
+  .search-filters { overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 2px; }
+  .search-filters::-webkit-scrollbar { display: none; }
+  .filter-pill { white-space: nowrap; flex-shrink: 0; }
+
+  /* Main + sidebar */
+  .main { padding: 20px 16px; gap: 20px; }
+
+  /* Bill rows */
+  .bill-row { grid-template-columns: 1fr; }
+  .bill-row-side { width: auto; flex-direction: row; border-left: none; border-top: 1px solid var(--cream-dark); padding: 8px; gap: 12px; }
+  .bill-row-main { padding: 16px 18px; }
+  .bill-title-text { font-size: 16px; }
+  .impact-tiles { flex-direction: column; gap: 6px; }
+  .itile { width: 100%; }
+  .bill-footer { flex-wrap: wrap; gap: 10px; }
+  .read-more-pill { margin-left: 0; }
+
+  /* Bill detail */
+  #page-detail { padding: 18px 16px; }
+  .detail-title { font-size: 22px; }
+  .detail-header-card { padding: 20px 18px; }
+  .impact-cards { grid-template-columns: 1fr; }
+  .glance-grid { grid-template-columns: 1fr 1fr; }
+  .depth-tabs { font-size: 10px; }
+  .depth-tab { padding: 8px 3px; font-size: 10px; }
+
+  /* Reps page */
+  #page-reps { padding: 18px 16px; }
+  .reps-title { font-size: 26px; }
+  .reps-address-bar { flex-wrap: wrap; }
+  .rfc-header { flex-wrap: wrap; }
+
+  /* Discuss */
+  #page-discuss { padding: 18px 16px; }
+  .discuss-header { flex-direction: column; align-items: flex-start; gap: 14px; }
+  .discuss-title { font-size: 26px; }
+
+  /* Local */
+  #page-local { padding: 48px 20px; }
+  .cs-title { font-size: 28px; }
+  .cs-email-wrap { flex-direction: column; }
+
+  /* Modal */
+  .modal { padding: 24px; }
+  .modal-title { font-size: 22px; }
+
+  /* Footer */
+  .footer { padding: 36px 18px 24px; }
+  .footer-top { grid-template-columns: 1fr 1fr; gap: 28px; }
+  .footer-bottom { flex-direction: column; gap: 14px; align-items: flex-start; }
+}
+
+@media (max-width: 400px) {
+  .hero-h1 { font-size: 28px; }
+  .glance-grid { grid-template-columns: 1fr; }
+  .footer-top { grid-template-columns: 1fr; }
+  .hero-stats > div:nth-child(n+3) { display: none; }
+}
 </style>
 </head>
 <body>
@@ -666,7 +804,6 @@ body { font-family: var(--body); background: var(--cream); color: var(--text); m
   <!-- Hero -->
   <section class="hero">
     <div class="hero-left">
-      <div class="hero-eyebrow"><div class="hero-dot"></div> Live · Updated Daily</div>
       <h1 class="hero-h1">Legislation,<br><em>finally</em> in plain<br>English.</h1>
       <p class="hero-sub">Every bill passed at the federal and state level — explained clearly. Know what your government is doing, and how it affects you personally.</p>
       <div class="hero-actions">
@@ -679,25 +816,36 @@ body { font-family: var(--body); background: var(--cream); color: var(--text); m
       <div class="hero-stats">
         <div><div class="hero-stat-val" id="stat-bills">—</div><div class="hero-stat-label">Bills tracked</div></div>
         <div><div class="hero-stat-val">50</div><div class="hero-stat-label">States covered</div></div>
-        <div><div class="hero-stat-val">535</div><div class="hero-stat-label">Congress members</div></div>
         <div><div class="hero-stat-val">Daily</div><div class="hero-stat-label">Data updates</div></div>
       </div>
     </div>
     <div class="hero-right">
       <div class="hero-card">
         <div class="hero-card-eyebrow">
-          Featured Bill · S.4821
-          <span class="hero-card-status"><span class="hero-card-dot"></span>Signed into Law</span>
+          Your Representatives
+          <span class="hero-card-read" onclick="showPage('reps')" style="margin-left:auto;">See all →</span>
         </div>
-        <div class="hero-card-title">Rural Broadband Expansion & Digital Equity Act</div>
-        <div class="hero-card-tiles">
-          <div class="hct"><div class="hct-icon">💰</div><div class="hct-label">Funding</div><div class="hct-val">$42B</div></div>
-          <div class="hct"><div class="hct-icon">📅</div><div class="hct-label">Effective</div><div class="hct-val">Jan 2027</div></div>
-          <div class="hct"><div class="hct-icon">🏠</div><div class="hct-label">Homes</div><div class="hct-val">8.5M</div></div>
+        <div class="hero-reps-lookup">
+          <span style="font-size:13px;">📍</span>
+          <input id="hero-address" placeholder="Enter your address…" onkeydown="if(event.key==='Enter') lookupRepsFromHero()">
+          <button onclick="lookupRepsFromHero()">Look up</button>
         </div>
-        <div class="hero-card-footer">
-          <span>Jun 12, 2026 · Sen. Warner (D-VA)</span>
-          <span class="hero-card-read" onclick="openDemoBill()">Read summary <svg width="12" height="12" fill="none" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg></span>
+        <div id="hero-reps-list">
+          <div class="hero-rep-row">
+            <div class="hero-rep-avatar R">ML</div>
+            <div style="flex:1;"><div class="hero-rep-name">Sen. Mike Lee</div><div class="hero-rep-detail">R · Utah · Senior Senator</div></div>
+            <div class="hero-party-tag R">R</div>
+          </div>
+          <div class="hero-rep-row">
+            <div class="hero-rep-avatar R">JC</div>
+            <div style="flex:1;"><div class="hero-rep-name">Sen. John Curtis</div><div class="hero-rep-detail">R · Utah · Junior Senator</div></div>
+            <div class="hero-party-tag R">R</div>
+          </div>
+          <div class="hero-rep-row">
+            <div class="hero-rep-avatar R">BM</div>
+            <div style="flex:1;"><div class="hero-rep-name">Rep. Blake Moore</div><div class="hero-rep-detail">R · UT-1 · Since 2021</div></div>
+            <div class="hero-party-tag R">R</div>
+          </div>
         </div>
       </div>
     </div>
@@ -705,10 +853,6 @@ body { font-family: var(--body); background: var(--cream); color: var(--text); m
 
   <!-- Search band -->
   <div class="search-band">
-    <div class="search-input-wrap">
-      <svg width="16" height="16" fill="none" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="m16.5 16.5 4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-      <input placeholder="Search bills by topic, keyword, bill number, or sponsor…" oninput="handleSearch(this.value)">
-    </div>
     <div class="search-filters">
       <div class="filter-pill active" onclick="setFilter('all',this)">All Levels</div>
       <div class="filter-pill" onclick="setFilter('federal',this)">
@@ -718,6 +862,10 @@ body { font-family: var(--body); background: var(--cream); color: var(--text); m
         <span style="width:7px;height:7px;background:#1A6B3A;border-radius:50%;display:inline-block;"></span> Utah State
       </div>
       <div class="filter-pill" onclick="setFilter('recent',this)">📅 This Week</div>
+    </div>
+    <div class="search-input-wrap">
+      <svg width="16" height="16" fill="none" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="m16.5 16.5 4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      <input placeholder="Search bills by topic, keyword, bill number, or sponsor…" oninput="handleSearch(this.value)">
     </div>
   </div>
 
@@ -750,38 +898,6 @@ body { font-family: var(--body); background: var(--cream); color: var(--text); m
 
     <!-- Sidebar -->
     <div class="sidebar">
-
-      <!-- Rep lookup widget -->
-      <div class="sidebar-widget">
-        <div class="widget-head">
-          <div class="widget-title">My Representatives</div>
-          <div class="widget-link" onclick="showPage('reps')">See all →</div>
-        </div>
-        <div class="widget-body">
-          <div class="rep-lookup-input">
-            <span>📍</span>
-            <input id="sidebar-address" placeholder="Enter your address…" onkeydown="if(event.key==='Enter') lookupRepsFromSidebar()">
-            <button class="rep-lookup-btn" onclick="lookupRepsFromSidebar()">Look up</button>
-          </div>
-          <div id="sidebar-reps">
-            <div class="rep-mini">
-              <div class="rep-avatar R">ML</div>
-              <div style="flex:1"><div class="rep-mini-name">Sen. Mike Lee</div><div class="rep-mini-detail">R · Utah · Senior Senator</div></div>
-              <div class="party-tag R">R</div>
-            </div>
-            <div class="rep-mini">
-              <div class="rep-avatar R">JC</div>
-              <div style="flex:1"><div class="rep-mini-name">Sen. John Curtis</div><div class="rep-mini-detail">R · Utah · Junior Senator</div></div>
-              <div class="party-tag R">R</div>
-            </div>
-            <div class="rep-mini">
-              <div class="rep-avatar R">BM</div>
-              <div style="flex:1"><div class="rep-mini-name">Rep. Blake Moore</div><div class="rep-mini-detail">R · UT-1 · Since 2021</div></div>
-              <div class="party-tag R">R</div>
-            </div>
-          </div>
-        </div>
-      </div>
 
       <!-- District map widget -->
       <div class="sidebar-widget">
@@ -2090,11 +2206,19 @@ async function lookupReps() {
 }
 
 async function lookupRepsFromSidebar() {
-  const address = document.getElementById('sidebar-address').value.trim();
+  const address = document.getElementById('sidebar-address')?.value.trim();
   if (!address || !CONFIG.GOOGLE_CIVIC_KEY) return;
   document.getElementById('reps-address').value = address;
   showPage('reps');
   lookupReps();
+}
+
+async function lookupRepsFromHero() {
+  const address = document.getElementById('hero-address')?.value.trim();
+  if (!address) { showPage('reps'); return; }
+  document.getElementById('reps-address').value = address;
+  showPage('reps');
+  if (CONFIG.GOOGLE_CIVIC_KEY) lookupReps();
 }
 
 function renderReps(data) {
