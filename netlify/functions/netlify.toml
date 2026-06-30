@@ -5,3 +5,9 @@
 
 [functions]
   node_bundler = "esbuild"
+
+# ── SCHEDULED FUNCTION ──
+# Runs daily-ingest once a day at 9:00 AM UTC to fetch new bills and
+# pre-generate their summaries. Visitors never trigger live API calls.
+[functions."daily-ingest"]
+  schedule = "0 9 * * *"
