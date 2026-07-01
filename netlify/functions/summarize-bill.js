@@ -83,12 +83,13 @@ Respond ONLY with valid JSON (no markdown, no backticks) in exactly this format:
   "tldr": "One sentence, plain English, what this bill does. Max 30 words.",
   "summary": "A 2-3 paragraph plain-English summary. Explain what it does, who it affects, and key numbers. No jargon.",
   "analysis": "A balanced policy analysis. Include what supporters say, what critics say, and any independent/expert context. Stay strictly nonpartisan — present both sides fairly.",
+  "topic": "ONE topic from this exact list: Healthcare, Education, Taxes, Environment, Housing, Energy, Transportation, Public Safety, Economy, Civil Rights, Immigration, Agriculture, Technology, Veterans, Government Reform",
   "impactTiles": [
     {"icon": "emoji", "label": "SHORT LABEL", "value": "key stat", "type": "positive|caution|neutral"}
   ]
 }
 
-For impactTiles, provide exactly 3 tiles showing the most relevant impacts (financial, who's affected, timeline). Use "positive" for beneficial impacts, "caution" for costs/tradeoffs, "neutral" for informational.`;
+For "topic", choose the single best-fitting category from the list. For impactTiles, provide exactly 3 tiles showing the most relevant impacts (financial, who's affected, timeline). Use "positive" for beneficial impacts, "caution" for costs/tradeoffs, "neutral" for informational.`;
 
   let summary;
   try {
@@ -144,6 +145,7 @@ For impactTiles, provide exactly 3 tiles showing the most relevant impacts (fina
           full_summary: summary.summary,
           analysis: summary.analysis,
           tiles: summary.impactTiles || [],
+          topic: summary.topic || 'Government Reform',
           updated_at: new Date().toISOString(),
         }),
       });
