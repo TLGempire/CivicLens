@@ -26,7 +26,15 @@ exports.handler = async function (event, context) {
   }
 
   const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
-  const SUPABASE_URL = process.env.SUPABASE_URL;
+  let SUPABASE_URL = process.env.SUPABASE_URL;
+  // Strip any trailing slash so `${SUPABASE_URL}/rest/v1/...` never doubles up
+  if (SUPABASE_URL) {
+    // Normalize: strip trailing slashes AND any /rest/v1 endpoint path that may
+    // have been pasted in, leaving just the base https://xxx.supabase.co
+    SUPABASE_URL = SUPABASE_URL.replace(/\/+$/, '');
+    SUPABASE_URL = SUPABASE_URL.replace(/\/rest\/v1.*$/, '');
+    SUPABASE_URL = SUPABASE_URL.replace(/\/+$/, '');
+  }
   const SUPABASE_KEY = process.env.SUPABASE_KEY;
 
   let billId, title, text;
