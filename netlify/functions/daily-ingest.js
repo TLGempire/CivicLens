@@ -1,14 +1,9 @@
 // netlify/functions/daily-ingest.js
 //
-// SCHEDULED FUNCTION — runs automatically once a day.
-// It fetches the latest federal + Utah bills, generates a summary for any
-// NEW bill (skipping ones already in Supabase), and stores everything.
-//
-// Visitors then read pre-loaded data from Supabase instantly — no live API
-// calls and no per-visitor AI cost. This is the "pre-compute at ingestion"
-// architecture: summarize once, serve forever.
-//
-// Schedule is configured in netlify.toml (runs daily at 9am UTC).
+// SCHEDULED FUNCTION — runs daily, but also safe to trigger manually.
+// Fetches recent federal + Utah bills and summarizes a SMALL number of new
+// ones per run (to stay under Netlify's 30-second limit). Because already-
+// summarized bills are skipped, running it repeatedly fills the database.
 
 exports.handler = async function (event, context) {
   const CONGRESS_API_KEY = process.env.CONGRESS_API_KEY;
@@ -18,17 +13,32 @@ exports.handler = async function (event, context) {
 
   const log = [];
   let newBills = 0;
-  let skipped = 0;
+
+  // How many NEW bills to summarize per run. Kept low to avoid timeouts.
+  const MAX_NEW_PER_RUN = 2;
+  // How many bills to consider from each source (small = fast).
+  const FETCH_LIMIT = 8;
+
+  // Helper: fetch with a hard timeout so a slow API can't hang the function
+  async function fetchWithTimeout(url, options = {}, ms = 6000) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), ms);
+    try {
+      return await fetch(url, { ...options, signal: controller.signal });
+    } finally {
+      clearTimeout(timer);
+    }
+  }
 
   // ── 1. FETCH FEDERAL BILLS ──
-  let bills = [];
+  let candidates = [];
   if (CONGRESS_API_KEY) {
     try {
-      const url = `https://api.congress.gov/v3/bill?format=json&limit=20&sort=updateDate+desc&api_key=${CONGRESS_API_KEY}`;
-      const res = await fetch(url);
+      const url = `https://api.congress.gov/v3/bill?format=json&limit=${FETCH_LIMIT}&sort=updateDate+desc&api_key=${CONGRESS_API_KEY}`;
+      const res = await fetchWithTimeout(url);
       if (res.ok) {
         const data = await res.json();
-        bills.push(...(data.bills || []).map((b) => ({
+        candidates.push(...(data.bills || []).map((b) => ({
           id: `${b.type}${b.number}-${b.congress}`,
           level: 'federal',
           number: `${b.type}.${b.number}`,
@@ -39,21 +49,21 @@ exports.handler = async function (event, context) {
           date: b.latestAction?.actionDate || b.updateDate || '',
           sponsor: b.sponsors?.[0]?.name || 'Unknown sponsor',
         })));
-        log.push(`Fetched ${bills.length} federal bills`);
+        log.push(`Fetched ${candidates.length} federal bills`);
       }
     } catch (e) {
       log.push('Congress fetch error: ' + e.message);
     }
   }
 
-  // ── 2. FETCH UTAH BILLS ──
+  // ── 2. FETCH UTAH BILLS (with timeout so it can't hang) ──
   try {
     const utahUrl = 'https://glen.le.utah.gov/bills/2026GS/billlist.json';
-    const res = await fetch(utahUrl);
+    const res = await fetchWithTimeout(utahUrl, {}, 5000);
     if (res.ok) {
       const data = await res.json();
       const list = data.bills || data || [];
-      const utahMapped = list.slice(0, 20).map((b) => {
+      const utahMapped = list.slice(0, FETCH_LIMIT).map((b) => {
         const billNum = b.number || b.billno || 'HB000';
         return {
           id: `utah-${billNum}`,
@@ -67,54 +77,51 @@ exports.handler = async function (event, context) {
           sponsor: b.sponsor || 'Utah Legislature',
         };
       });
-      bills.push(...utahMapped);
+      candidates.push(...utahMapped);
       log.push(`Fetched ${utahMapped.length} Utah bills`);
     }
   } catch (e) {
-    log.push('Utah fetch error: ' + e.message);
+    log.push('Utah fetch error (skipped): ' + e.message);
   }
 
-  // ── 3. FOR EACH BILL: skip if already summarized, else generate + store ──
-  // Remove duplicates before processing — the Congress API can return the
-  // same bill multiple times (e.g. at different action stages). Keep the first.
-  const uniqueBills = [];
-  const seenIds = new Set();
-  for (const bill of bills) {
+  // ── 3. DEDUPE candidates by normalized bill number ──
+  const seen = new Set();
+  const unique = [];
+  for (const bill of candidates) {
     const key = (bill.number || bill.id || '').toString().replace(/[\s.]/g, '').toUpperCase();
-    if (seenIds.has(key)) continue;
-    seenIds.add(key);
-    uniqueBills.push(bill);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    unique.push(bill);
   }
-  log.push(`${uniqueBills.length} unique bills after dedup (from ${bills.length})`);
 
-  // To stay under Netlify's function time limit, only summarize a few NEW bills
-  // per run. Because already-summarized bills are skipped, running this a few
-  // times fills the database without ever timing out.
-  const MAX_NEW_PER_RUN = 3;
+  // ── 4. ONE bulk query to find which bills already have summaries ──
+  const alreadyDone = new Set();
+  try {
+    const ids = unique.map((b) => `"${b.id}"`).join(',');
+    const checkRes = await fetchWithTimeout(
+      `${SUPABASE_URL}/rest/v1/bills?id=in.(${encodeURIComponent(ids)})&select=id,tldr`,
+      { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } },
+      5000
+    );
+    if (checkRes.ok) {
+      const rows = await checkRes.json();
+      rows.forEach((r) => { if (r.tldr) alreadyDone.add(r.id); });
+    }
+  } catch (e) {
+    log.push('Bulk existence check error: ' + e.message);
+  }
 
-  for (const bill of uniqueBills) {
-    // Stop once we've summarized enough new bills this run
+  // Only the new ones need summarizing
+  const todo = unique.filter((b) => !alreadyDone.has(b.id));
+  log.push(`${todo.length} new bills to summarize (${alreadyDone.size} already cached)`);
+
+  // ── 5. Summarize up to MAX_NEW_PER_RUN new bills ──
+  for (const bill of todo) {
     if (newBills >= MAX_NEW_PER_RUN) {
-      log.push(`Reached per-run limit of ${MAX_NEW_PER_RUN} new bills. Run again to continue.`);
+      log.push(`Hit per-run limit of ${MAX_NEW_PER_RUN}. Run again to add more.`);
       break;
     }
 
-    // Check if already in Supabase with a summary
-    let exists = false;
-    try {
-      const checkRes = await fetch(
-        `${SUPABASE_URL}/rest/v1/bills?id=eq.${encodeURIComponent(bill.id)}&select=id,tldr`,
-        { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } }
-      );
-      if (checkRes.ok) {
-        const rows = await checkRes.json();
-        if (rows.length && rows[0].tldr) exists = true;
-      }
-    } catch (e) { /* treat as not existing */ }
-
-    if (exists) { skipped++; continue; }
-
-    // Generate summary with Claude
     let summary = null;
     try {
       const prompt = `You are a nonpartisan civic education assistant. Explain this legislation clearly and neutrally.
@@ -131,9 +138,9 @@ Respond ONLY with valid JSON (no markdown) in this exact format:
     {"icon":"emoji","label":"SHORT LABEL","value":"key stat","type":"positive|caution|neutral"}
   ]
 }
-Choose the single best-fitting "topic" from the list. Provide exactly 3 impactTiles showing the most relevant impacts.`;
+Choose the single best-fitting "topic" from the list. Provide exactly 3 impactTiles.`;
 
-      const claudeRes = await fetch('https://api.anthropic.com/v1/messages', {
+      const claudeRes = await fetchWithTimeout('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -142,15 +149,18 @@ Choose the single best-fitting "topic" from the list. Provide exactly 3 impactTi
         },
         body: JSON.stringify({
           model: 'claude-sonnet-4-6',
-          max_tokens: 1500,
+          max_tokens: 1200,
           messages: [{ role: 'user', content: prompt }],
         }),
-      });
+      }, 12000);
+
       if (claudeRes.ok) {
         const cd = await claudeRes.json();
         let raw = cd.content.map((c) => (c.type === 'text' ? c.text : '')).join('').trim();
         raw = raw.replace(/```json|```/g, '').trim();
         summary = JSON.parse(raw);
+      } else {
+        log.push(`Claude error ${claudeRes.status} for ${bill.id}`);
       }
     } catch (e) {
       log.push(`Summary error for ${bill.id}: ${e.message}`);
@@ -161,7 +171,7 @@ Choose the single best-fitting "topic" from the list. Provide exactly 3 impactTi
 
     // Store in Supabase
     try {
-      await fetch(`${SUPABASE_URL}/rest/v1/bills`, {
+      await fetchWithTimeout(`${SUPABASE_URL}/rest/v1/bills`, {
         method: 'POST',
         headers: {
           apikey: SUPABASE_KEY,
@@ -187,18 +197,20 @@ Choose the single best-fitting "topic" from the list. Provide exactly 3 impactTi
           topic: summary.topic || 'Government Reform',
           updated_at: new Date().toISOString(),
         }),
-      });
+      }, 5000);
       newBills++;
+      log.push(`Saved ${bill.id}`);
     } catch (e) {
       log.push(`Store error for ${bill.id}: ${e.message}`);
     }
   }
 
-  log.push(`Done. ${newBills} new bills summarized, ${skipped} already cached.`);
+  log.push(`Done. ${newBills} new bills summarized this run.`);
   console.log(log.join('\n'));
 
   return {
     statusCode: 200,
-    body: JSON.stringify({ newBills, skipped, log }),
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ newBills, cached: alreadyDone.size, log }),
   };
 };
