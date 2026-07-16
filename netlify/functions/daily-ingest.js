@@ -22,11 +22,11 @@ exports.handler = async function (event, context) {
   const log = [];
   const START_TIME = Date.now();
   const elapsed = () => Date.now() - START_TIME;
-  const DEADLINE_MS = 22000; // bail out before Netlify's 30s limit
+  const DEADLINE_MS = 14000; // bail out before Netlify's 30s limit
   let newBills = 0;
 
   const MAX_NEW_PER_RUN = 1;   // summarize at most 2 new bills per run
-  const FETCH_LIMIT = 40;       // consider only a few recent bills per source
+  const FETCH_LIMIT = 20;       // consider only a few recent bills per source
 
   async function fetchWithTimeout(url, options = {}, ms = 6000) {
     const controller = new AbortController();
@@ -177,15 +177,18 @@ Choose the single best "topic". Provide exactly 3 impactTiles.`;
           },
           body: JSON.stringify({
             model: 'claude-sonnet-4-6',
-            max_tokens: 1200,
+            max_tokens: 600,
             messages: [{ role: 'user', content: prompt }],
           }),
-        }, 20000);
+        }, 16000);
 
         if (claudeRes.ok) {
           const cd = await claudeRes.json();
           let raw = (cd.content || []).map((c) => (c.type === 'text' ? c.text : '')).join('').trim();
           raw = raw.replace(/```json|```/g, '').trim();
+        const first = raw.indexOf('{');
+        const last = raw.lastIndexOf('}');
+        if (first !== -1 && last > first) raw = raw.substring(first, last + 1);
           summary = JSON.parse(raw);
         } else {
           const errTxt = await claudeRes.text();
