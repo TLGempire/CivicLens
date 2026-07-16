@@ -6,7 +6,7 @@
 
 exports.handler = async function (event, context) {
   const CONGRESS_API_KEY = process.env.CONGRESS_API_KEY;
-  const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
+  const ANTHROPIC_API_KEY = process.env.CLAUDE_KEY;
   let SUPABASE_URL = process.env.SUPABASE_URL;
   // Strip any trailing slash so `${SUPABASE_URL}/rest/v1/...` never doubles up
   if (SUPABASE_URL) {
@@ -20,10 +20,13 @@ exports.handler = async function (event, context) {
 
   const headers = { 'Content-Type': 'application/json' };
   const log = [];
+  const START_TIME = Date.now();
+  const elapsed = () => Date.now() - START_TIME;
+  const DEADLINE_MS = 22000; // bail out before Netlify's 30s limit
   let newBills = 0;
 
-  const MAX_NEW_PER_RUN = 2;   // summarize at most 2 new bills per run
-  const FETCH_LIMIT = 6;       // consider only a few recent bills per source
+  const MAX_NEW_PER_RUN = 1;   // summarize at most 2 new bills per run
+  const FETCH_LIMIT = 40;       // consider only a few recent bills per source
 
   async function fetchWithTimeout(url, options = {}, ms = 6000) {
     const controller = new AbortController();
@@ -50,7 +53,7 @@ exports.handler = async function (event, context) {
       try {
         const url = `https://api.congress.gov/v3/bill?format=json&limit=${FETCH_LIMIT}&sort=updateDate+desc&api_key=${CONGRESS_API_KEY}`;
         const res = await fetchWithTimeout(url, {}, 6000);
-        if (res.ok) {
+        if (res && res.ok) {
           const data = await res.json();
           candidates.push(...(data.bills || []).map((b) => ({
             id: `${b.type}${b.number}-${b.congress}`,
@@ -76,8 +79,10 @@ exports.handler = async function (event, context) {
 
     // ── 2. FETCH UTAH BILLS (skipped gracefully if slow) ──
     try {
-      const utahUrl = 'https://glen.le.utah.gov/bills/2026GS/billlist.json';
-      const res = await fetchWithTimeout(utahUrl, {}, 5000);
+      const SKIP_UTAH = true;
+    const utahUrl = 'https://glen.le.utah.gov/bills/2026GS/billlist.json';
+      const res = SKIP_UTAH ? null : await fetchWithTimeout(utahUrl, {}, 5000);
+      if (SKIP_UTAH) log.push('Utah skipped (endpoint 404s - fixing separately)');
       if (res.ok) {
         const data = await res.json();
         const list = data.bills || data || [];
@@ -98,7 +103,7 @@ exports.handler = async function (event, context) {
         candidates.push(...utahMapped);
         log.push(`Fetched ${utahMapped.length} Utah bills`);
       } else {
-        log.push(`Utah API returned ${res.status}`);
+        if (res) log.push(`Utah API returned ${res.status}`);
       }
     } catch (e) {
       log.push('Utah fetch skipped: ' + e.message);
@@ -117,6 +122,10 @@ exports.handler = async function (event, context) {
 
     // ── 4. Walk bills; summarize new ones until we hit the per-run limit ──
     for (const bill of unique) {
+      if (elapsed() > DEADLINE_MS) {
+        log.push(`DEADLINE REACHED at ${elapsed()}ms - returning early`);
+        break;
+      }
       if (newBills >= MAX_NEW_PER_RUN) {
         log.push(`Hit per-run limit of ${MAX_NEW_PER_RUN}. Run again for more.`);
         break;
@@ -158,7 +167,8 @@ Respond ONLY with valid JSON (no markdown) in this exact format:
 }
 Choose the single best "topic". Provide exactly 3 impactTiles.`;
 
-        const claudeRes = await fetchWithTimeout('https://api.anthropic.com/v1/messages', {
+        log.push(`[timing] starting claude for ${bill.id} at ${elapsed()}ms`);
+      const claudeRes = await fetchWithTimeout('https://api.anthropic.com/v1/messages', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -170,7 +180,7 @@ Choose the single best "topic". Provide exactly 3 impactTiles.`;
             max_tokens: 1200,
             messages: [{ role: 'user', content: prompt }],
           }),
-        }, 14000);
+        }, 20000);
 
         if (claudeRes.ok) {
           const cd = await claudeRes.json();
@@ -211,7 +221,7 @@ Choose the single best "topic". Provide exactly 3 impactTiles.`;
             tldr: summary.tldr,
             summary: summary.summary,
             full_summary: summary.summary,
-            analysis: summary.analysis,
+            analysis: summary.analysis || '',
             tiles: summary.impactTiles || [],
             topic: summary.topic || 'Government Reform',
             updated_at: new Date().toISOString(),

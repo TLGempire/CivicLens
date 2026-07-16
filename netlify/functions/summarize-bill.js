@@ -25,7 +25,7 @@ exports.handler = async function (event, context) {
     return { statusCode: 405, headers, body: JSON.stringify({ error: 'Method not allowed' }) };
   }
 
-  const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
+  const ANTHROPIC_API_KEY = process.env.CLAUDE_KEY;
   let SUPABASE_URL = process.env.SUPABASE_URL;
   // Strip any trailing slash so `${SUPABASE_URL}/rest/v1/...` never doubles up
   if (SUPABASE_URL) {

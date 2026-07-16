@@ -1,18 +1,10 @@
-// netlify/functions/test-ingest.js
-// A minimal diagnostic function. It does ONE bill end-to-end with heavy logging
-// and returns detailed JSON so we can see exactly which step works or fails.
-// No Congress fetch, no Utah fetch — just Claude + Supabase on a hardcoded bill.
+// test-ingest.js — diagnostic version with key fingerprinting
 
 exports.handler = async function () {
-  const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
+  const ANTHROPIC_API_KEY = process.env.CLAUDE_KEY;
   let SUPABASE_URL = process.env.SUPABASE_URL;
-  // Strip any trailing slash so `${SUPABASE_URL}/rest/v1/...` never doubles up
   if (SUPABASE_URL) {
-    // Normalize: strip trailing slashes AND any /rest/v1 endpoint path that may
-    // have been pasted in, leaving just the base https://xxx.supabase.co
-    SUPABASE_URL = SUPABASE_URL.replace(/\/+$/, '');
-    SUPABASE_URL = SUPABASE_URL.replace(/\/rest\/v1.*$/, '');
-    SUPABASE_URL = SUPABASE_URL.replace(/\/+$/, '');
+    SUPABASE_URL = SUPABASE_URL.replace(/\/+$/, '').replace(/\/rest\/v1.*$/, '').replace(/\/+$/, '');
   }
   const SUPABASE_KEY = process.env.SUPABASE_KEY;
 
@@ -20,18 +12,23 @@ exports.handler = async function () {
   const steps = {};
 
   try {
-    // Step 0: confirm env vars exist (report presence, not values)
+    // Fingerprint the key the FUNCTION actually sees
     steps.env = {
       hasAnthropic: !!ANTHROPIC_API_KEY,
+      anthropicLength: ANTHROPIC_API_KEY ? ANTHROPIC_API_KEY.length : 0,
+      anthropicFirst12: ANTHROPIC_API_KEY ? ANTHROPIC_API_KEY.substring(0, 12) : null,
+      anthropicLast4: ANTHROPIC_API_KEY ? ANTHROPIC_API_KEY.slice(-4) : null,
+      anthropicHasWhitespace: ANTHROPIC_API_KEY ? /\s/.test(ANTHROPIC_API_KEY) : null,
       hasSupabaseUrl: !!SUPABASE_URL,
       hasSupabaseKey: !!SUPABASE_KEY,
       supabaseUrlStart: SUPABASE_URL ? SUPABASE_URL.substring(0, 20) : null,
     };
+
     if (!ANTHROPIC_API_KEY || !SUPABASE_URL || !SUPABASE_KEY) {
       return { statusCode: 200, headers, body: JSON.stringify({ stoppedAt: 'env-check', steps }) };
     }
 
-    // Step 1: Call Claude on a simple hardcoded prompt
+    // Step 1: Claude
     const t1 = Date.now();
     let summary = null;
     try {
@@ -56,8 +53,7 @@ exports.handler = async function () {
         summary = JSON.parse(raw);
         steps.claude.parsed = summary;
       } else {
-        const errTxt = await claudeRes.text();
-        steps.claude.error = errTxt.substring(0, 200);
+        steps.claude.error = (await claudeRes.text()).substring(0, 200);
         return { statusCode: 200, headers, body: JSON.stringify({ stoppedAt: 'claude', steps }) };
       }
     } catch (e) {
@@ -65,7 +61,7 @@ exports.handler = async function () {
       return { statusCode: 200, headers, body: JSON.stringify({ stoppedAt: 'claude-exception', steps }) };
     }
 
-    // Step 2: Write a test row to Supabase
+    // Step 2: Supabase write
     const t2 = Date.now();
     try {
       const storeRes = await fetch(`${SUPABASE_URL}/rest/v1/bills`, {
