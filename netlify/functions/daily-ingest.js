@@ -120,6 +120,23 @@ exports.handler = async function (event, context) {
     }
     log.push(`${unique.length} unique candidate bills`);
 
+    // Fetch ALL cached bill ids in ONE query (per-bill checks were too slow in prod)
+    const alreadyDone = new Set();
+    try {
+      const allRes = await fetchWithTimeout(
+        `${SUPABASE_URL}/rest/v1/bills?select=id&tldr=not.is.null&limit=1000`,
+        { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } },
+        4000
+      );
+      if (allRes && allRes.ok) {
+        const rows = await allRes.json();
+        rows.forEach(r => alreadyDone.add(r.id));
+        log.push(`${alreadyDone.size} bills already cached`);
+      }
+    } catch (e) {
+      log.push('Bulk cache check failed: ' + e.message);
+    }
+
     // ── 4. Walk bills; summarize new ones until we hit the per-run limit ──
     for (const bill of unique) {
       if (elapsed() > DEADLINE_MS) {
@@ -130,6 +147,9 @@ exports.handler = async function (event, context) {
         log.push(`Hit per-run limit of ${MAX_NEW_PER_RUN}. Run again for more.`);
         break;
       }
+
+      // Fast in-memory skip (avoids a network round-trip per bill)
+      if (alreadyDone.has(bill.id)) continue;
 
       // Check if THIS bill already has a summary (single simple query)
       let exists = false;
