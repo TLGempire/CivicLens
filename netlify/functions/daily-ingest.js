@@ -26,7 +26,7 @@ exports.handler = async function (event, context) {
   let newBills = 0;
 
   const MAX_NEW_PER_RUN = 1;   // summarize at most 2 new bills per run
-  const FETCH_LIMIT = 20;       // consider only a few recent bills per source
+  const FETCH_LIMIT = 100;       // consider only a few recent bills per source
 
   async function fetchWithTimeout(url, options = {}, ms = 6000) {
     const controller = new AbortController();
@@ -178,7 +178,7 @@ Bill: ${bill.title}
 Respond ONLY with valid JSON (no markdown) in this exact format:
 {
   "tldr": "One sentence, plain English, what this bill does. Max 30 words.",
-  "summary": "A 2-3 paragraph plain-English summary covering what it does, who it affects, and key numbers.",
+  "summary": "A 2 paragraph plain-English summary covering what it does, who it affects, and key numbers. Keep under 120 words.",
   "analysis": "A balanced policy analysis: what supporters say, what critics say, independent context. Strictly nonpartisan.",
   "topic": "ONE topic from this exact list: Healthcare, Education, Taxes, Environment, Housing, Energy, Transportation, Public Safety, Economy, Civil Rights, Immigration, Agriculture, Technology, Veterans, Government Reform",
   "impactTiles": [
@@ -197,7 +197,7 @@ Choose the single best "topic". Provide exactly 3 impactTiles.`;
           },
           body: JSON.stringify({
             model: 'claude-sonnet-4-6',
-            max_tokens: 600,
+            max_tokens: 1000,
             messages: [{ role: 'user', content: prompt }],
           }),
         }, 16000);

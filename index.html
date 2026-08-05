@@ -1595,7 +1595,7 @@ function billRowHTML(b) {
       <div>
         <div class="itile-label">${t.label}</div>
         <div class="itile-val">${t.value}</div>
-        <div class="itile-sub">${t.sub}</div>
+        ${t.sub ? `<div class="itile-sub">${t.sub}</div>` : ''}
       </div>
     </div>`).join('');
 
@@ -1610,7 +1610,7 @@ function billRowHTML(b) {
         <span class="bill-num">${b.number} · ${b.chamber}</span>
         <div class="bill-status ${statusClass}"><div class="status-dot"></div>${b.statusLabel}</div>
       </div>
-      <div class="bill-title-text">${b.title}</div>
+      <div class="bill-title-text">${b.title && b.title.length > 160 ? b.title.substring(0, 160).trim() + "…" : b.title}</div>
       <div class="bill-summary-text" id="summary-${b.id}">${b.summaryLoaded ? b.tldr : b.summary}</div>
       <div class="impact-tiles">${tilesHTML}</div>
       <!-- Sentiment moved to Discussion Board -->
