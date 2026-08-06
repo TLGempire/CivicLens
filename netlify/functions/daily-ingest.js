@@ -17,6 +17,7 @@ exports.handler = async function (event, context) {
     SUPABASE_URL = SUPABASE_URL.replace(/\/+$/, '');
   }
   const SUPABASE_KEY = process.env.SUPABASE_KEY;
+  const UTAH_TOKEN = process.env.UTAH_TOKEN;
 
   const headers = { 'Content-Type': 'application/json' };
   const log = [];
@@ -79,8 +80,8 @@ exports.handler = async function (event, context) {
 
     // ── 2. FETCH UTAH BILLS (skipped gracefully if slow) ──
     try {
-      const SKIP_UTAH = true;
-    const utahUrl = 'https://glen.le.utah.gov/bills/2026GS/billlist.json';
+      const SKIP_UTAH = !UTAH_TOKEN;
+    const utahUrl = `https://glen.le.utah.gov/bills/2026GS/billlist/${UTAH_TOKEN}`;
       const res = SKIP_UTAH ? null : await fetchWithTimeout(utahUrl, {}, 5000);
       if (SKIP_UTAH) log.push('Utah skipped (endpoint 404s - fixing separately)');
       if (res.ok) {
@@ -120,6 +121,19 @@ exports.handler = async function (event, context) {
     }
     log.push(`${unique.length} unique candidate bills`);
 
+    // Interleave federal and state so neither starves the other.
+    // Without this, federal bills always come first and Utah never gets picked.
+    const fedList = unique.filter(b => b.level === 'federal');
+    const stateList = unique.filter(b => b.level === 'state');
+    const mixed = [];
+    for (let i = 0; i < Math.max(fedList.length, stateList.length); i++) {
+      if (stateList[i]) mixed.push(stateList[i]);
+      if (fedList[i]) mixed.push(fedList[i]);
+    }
+    unique.length = 0;
+    unique.push(...mixed);
+    log.push(`Interleaved: ${stateList.length} state, ${fedList.length} federal`);
+
     // Fetch ALL cached bill ids in ONE query (per-bill checks were too slow in prod)
     const alreadyDone = new Set();
     try {
@@ -148,6 +162,28 @@ exports.handler = async function (event, context) {
         break;
       }
 
+      // Utah bills arrive with only a number — fetch the real content first
+      if (bill.level === 'state' && UTAH_TOKEN && !bill.detailLoaded) {
+        try {
+          const num = String(bill.number || '').replace('utah-', '');
+          const dRes = await fetchWithTimeout(
+            `https://glen.le.utah.gov/bills/2026GS/${num}/${UTAH_TOKEN}`, {}, 5000
+          );
+          if (dRes && dRes.ok) {
+            const d = await dRes.json();
+            const strip = (s) => String(s || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+            bill.title = d.shortTitle || bill.title;
+            bill.sponsor = d.primeSponsorName || bill.sponsor;
+            bill.status_label = strip(d.lastAction).substring(0, 45) || bill.status_label;
+            bill.date = d.lastActionDate || bill.date;
+            bill.detailText = strip(d.generalProvisions) + ' ' + strip(d.highlightedProvisions);
+            bill.detailLoaded = true;
+          }
+        } catch (e) {
+          log.push(`Utah detail failed for ${bill.id}: ${e.message}`);
+        }
+      }
+
       // Fast in-memory skip (avoids a network round-trip per bill)
       if (alreadyDone.has(bill.id)) continue;
 
@@ -173,7 +209,7 @@ exports.handler = async function (event, context) {
       try {
         const prompt = `You are a nonpartisan civic education assistant. Explain this legislation clearly and neutrally.
 
-Bill: ${bill.title}
+Bill: ${bill.title}${bill.detailText ? '\n\nDetails: ' + bill.detailText.substring(0, 1500) : ''}
 
 Respond ONLY with valid JSON (no markdown) in this exact format:
 {
