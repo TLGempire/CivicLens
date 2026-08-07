@@ -866,6 +866,15 @@ body { font-family: var(--body); background: var(--cream); color: var(--text); m
             <div class="hero-party-tag R">R</div>
           </div>
         </div>
+        <div style="margin-top:14px;padding-top:14px;border-top:1px solid rgba(255,255,255,0.08);">
+          <div style="font-family:var(--mono);font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.35);margin-bottom:8px;">Your District</div>
+          <div class="district-map-widget" style="height:96px;margin-bottom:0;">
+            <div style="z-index:2;text-align:center">
+              <div class="dmw-label" id="district-label">UT-1</div>
+              <div class="dmw-sub">Utah's 1st Congressional District</div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </section>
@@ -927,20 +936,6 @@ body { font-family: var(--body); background: var(--cream); color: var(--text); m
     <!-- Sidebar -->
     <div class="sidebar">
 
-      <!-- District map widget -->
-      <div class="sidebar-widget">
-        <div class="widget-head"><div class="widget-title">Your District</div></div>
-        <div class="widget-body">
-          <div class="district-map-widget">
-            <svg style="position:absolute;inset:0;width:100%;height:100%;opacity:0.2" viewBox="0 0 300 130"><path d="M30 15 L270 15 L270 105 L220 105 L220 120 L30 120 Z" fill="none" stroke="#C9A84C" stroke-width="1.5" stroke-dasharray="5 4"/><line x1="0" y1="65" x2="300" y2="65" stroke="#C9A84C" stroke-width="1" opacity="0.5"/><line x1="150" y1="0" x2="150" y2="130" stroke="#C9A84C" stroke-width="1" opacity="0.5"/><circle cx="110" cy="70" r="5" fill="#C9A84C" opacity="0.9"/></svg>
-            <div style="z-index:2;text-align:center">
-              <div class="dmw-label" id="district-label">UT-1</div>
-              <div class="dmw-sub">Utah's 1st Congressional District</div>
-            </div>
-          </div>
-          <div style="font-size:12px;color:var(--text-muted);text-align:center;cursor:pointer;color:var(--gold);font-weight:600;">View full district map →</div>
-        </div>
-      </div>
 
       <!-- Recent activity -->
       <div class="sidebar-widget">
@@ -1839,7 +1834,6 @@ function renderBillDetail(bill) {
     <div class="depth-section">
       <div class="depth-section-label">↕ Adjust Reading Depth</div>
       <div class="depth-tabs">
-        <div class="depth-tab" onclick="setDepth(this,'tldr','${bill.id}')">30-sec</div>
         <div class="depth-tab active" onclick="setDepth(this,'summary','${bill.id}')">Summary</div>
         <div class="depth-tab locked" onclick="showUpgradeModal()">Analysis 🔒</div>
         <div class="depth-tab" onclick="setDepth(this,'fulltext','${bill.id}')">Full Text</div>
