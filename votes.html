@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CivicLens — How Your Representatives Vote</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#0D1B2A;--navy-mid:#162535;--slate:#4A6274;--slate-lt:#8FA3B1;
+  --gold:#C9A84C;--cream:#F8F5EE;--cream-dk:#EDE9DF;--cream-deep:#D9D4C8;
+  --yes:#3A6E8F;--yes-bg:#E8F0F5;--yes-bd:#B9D0DE;--no:#8A6A3F;--no-bg:#F5EFE6;--no-bd:#DCC9AC;
+  --amber:#8A6000;--amber-bg:#FFF8E5;
+  --mono:'IBM Plex Mono',monospace;--disp:'Playfair Display',serif;--body:'Inter',sans-serif;
+}
+body{font-family:var(--body);background:var(--cream);color:var(--navy);line-height:1.5}
+.nav{background:var(--navy);height:60px;display:flex;align-items:center;padding:0 24px;gap:24px;position:sticky;top:0;z-index:100}
+.logo{font-family:var(--disp);font-size:20px;color:var(--cream);text-decoration:none}
+.logo span{color:var(--gold)}
+.tabs{display:flex;gap:4px;margin-left:auto}
+.tab{background:none;border:none;color:rgba(255,255,255,.55);font-size:13px;font-weight:500;padding:8px 14px;border-radius:7px;cursor:pointer;font-family:var(--body)}
+.tab:hover{color:var(--cream);background:rgba(255,255,255,.07)}
+.tab.on{color:var(--navy);background:var(--gold);font-weight:600}
+.hd{background:var(--navy);padding:28px 24px 32px}
+.hd-in{max-width:1100px;margin:0 auto}
+.hd h1{font-family:var(--disp);font-size:32px;color:var(--cream);letter-spacing:-.02em;margin-bottom:6px}
+.hd p{color:rgba(255,255,255,.5);font-size:14px}
+.hd-stats{display:flex;gap:28px;margin-top:20px;padding-top:18px;border-top:1px solid rgba(255,255,255,.1)}
+.st b{display:block;font-family:var(--disp);font-size:22px;color:var(--cream)}
+.st span{font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.35)}
+.wrap{max-width:1100px;margin:0 auto;padding:24px}
+.page{display:none}.page.on{display:block}
+.mgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px}
+.mcard{background:#fff;border:1px solid var(--cream-dk);border-radius:14px;overflow:hidden;cursor:pointer;transition:box-shadow .15s,transform .15s}
+.mcard:hover{box-shadow:0 6px 24px rgba(13,27,42,.1);transform:translateY(-1px)}
+.mtop{padding:16px 18px;display:flex;gap:12px;align-items:center;border-bottom:1px solid var(--cream-dk)}
+.av{width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:#fff;flex-shrink:0}
+.av.R{background:linear-gradient(135deg,#B45B5B,#964747)}
+.av.D{background:linear-gradient(135deg,#5B7FB4,#476196)}
+.av.I{background:linear-gradient(135deg,#6B7280,#4B5563)}
+.mname{font-family:var(--disp);font-size:17px;line-height:1.2}
+.mseat{font-family:var(--mono);font-size:10px;color:var(--slate-lt);letter-spacing:.06em;text-transform:uppercase;margin-top:3px}
+.mbody{padding:14px 18px}
+.mrow{display:flex;justify-content:space-between;font-size:12px;color:var(--slate);margin-bottom:8px}
+.bar{height:8px;border-radius:4px;background:var(--cream-dk);overflow:hidden;display:flex;margin-bottom:10px}
+.bar i{display:block;height:100%}
+.bar .y{background:var(--yes)}.bar .n{background:var(--no)}.bar .m{background:var(--cream-deep)}
+.legend{display:flex;gap:14px;font-family:var(--mono);font-size:10px}
+.legend s{text-decoration:none;display:flex;align-items:center;gap:4px}
+.dot{width:8px;height:8px;border-radius:2px;display:inline-block}
+.att{margin-top:12px;padding-top:12px;border-top:1px solid var(--cream-dk);display:flex;justify-content:space-between;align-items:center}
+.att-n{font-family:var(--mono);font-size:18px;font-weight:600}
+.att-n{color:var(--navy)}
+.filters{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:18px}
+.chip{padding:6px 13px;border-radius:20px;border:1.5px solid var(--cream-dk);background:#fff;font-size:12px;font-weight:500;color:var(--slate);cursor:pointer;white-space:nowrap}
+.chip.on{background:var(--gold);border-color:var(--gold);color:var(--navy);font-weight:600}
+.vcard{background:#fff;border:1px solid var(--cream-dk);border-radius:14px;margin-bottom:12px;overflow:hidden}
+.vtop{padding:16px 20px 0;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.badge{font-family:var(--mono);font-size:9px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:3px 9px;border-radius:4px}
+.badge.h{background:#E8EFF6;color:#1B4F8A}
+.badge.s{background:#F3EDE4;color:#8A5A1B}
+.bnum{font-family:var(--mono);font-size:11px;color:var(--slate-lt)}
+.vres{margin-left:auto;font-family:var(--mono);font-size:10px;font-weight:600;padding:3px 9px;border-radius:4px}
+.vres.p{background:var(--cream-dk);color:var(--navy)}
+.vres.f{background:var(--cream-dk);color:var(--slate)}
+.vsum{padding:12px 20px 0;font-size:15px;line-height:1.55}
+.vmeans{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:14px 20px 0}
+.mbox{border-radius:10px;padding:12px 14px}
+.mbox.y{background:var(--yes-bg);border:1px solid var(--yes-bd)}
+.mbox.n{background:var(--no-bg);border:1px solid var(--no-bd)}
+.mlab{font-family:var(--mono);font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:5px}
+.mbox.y .mlab{color:var(--yes)}.mbox.n .mlab{color:var(--no)}
+.mtxt{font-size:13px;line-height:1.5;color:var(--slate)}
+.vwho{padding:12px 20px 0;font-size:12px;color:var(--slate-lt)}
+.vwho b{color:var(--slate);font-weight:600}
+.vdel{margin:14px 20px 16px;background:var(--cream);border-radius:10px;padding:12px 14px}
+.vdel-t{font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--slate-lt);margin-bottom:9px}
+.vd{display:flex;align-items:center;gap:9px;padding:5px 0}
+.vd-av{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff;flex-shrink:0}
+.vd-av.R{background:linear-gradient(135deg,#B45B5B,#964747)}
+.vd-av.D{background:linear-gradient(135deg,#5B7FB4,#476196)}
+.vd-av.I{background:linear-gradient(135deg,#7C8794,#5D6873)}
+.vd-nm{font-size:13px;flex:1}
+.pos{font-family:var(--mono);font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px}
+.pos.Yea{background:var(--yes);color:#fff}
+.pos.Nay{background:var(--no);color:#fff}
+.pos.NotVoting{background:var(--amber-bg);color:var(--amber)}
+.pos.Present{background:var(--cream-dk);color:var(--slate)}
+.back{background:none;border:none;color:var(--gold);font-size:13px;font-weight:600;cursor:pointer;margin-bottom:16px;font-family:var(--body)}
+.ihead{background:#fff;border:1px solid var(--cream-dk);border-radius:14px;padding:20px;margin-bottom:16px;display:flex;gap:16px;align-items:center}
+.igrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px}
+.icard{background:#fff;border:1px solid var(--cream-dk);border-radius:12px;padding:14px}
+.iname{font-size:13px;font-weight:600;margin-bottom:9px;display:flex;align-items:center;gap:7px}
+.imini{height:6px;border-radius:3px;background:var(--cream-dk);overflow:hidden;display:flex;margin-bottom:7px}
+.icount{font-family:var(--mono);font-size:10px;color:var(--slate-lt)}
+.load{text-align:center;padding:60px 20px;color:var(--slate-lt);font-family:var(--mono);font-size:12px}
+.empty{text-align:center;padding:40px;color:var(--slate-lt);font-size:13px}
+@media(max-width:640px){
+  .vmeans{grid-template-columns:1fr}
+  .hd h1{font-size:24px}
+  .hd-stats{gap:18px;flex-wrap:wrap}
+  .nav{padding:0 14px;gap:10px}
+  .tab{padding:7px 10px;font-size:12px}
+}
+</style>
+</head>
+<body>
+<nav class="nav">
+  <a href="#" class="logo" onclick="go('reps');return false">Civic<span>Lens</span></a>
+  <div class="tabs">
+    <button class="tab on" id="t-reps" onclick="go('reps')">My Delegation</button>
+    <button class="tab" id="t-votes" onclick="go('votes')">Recent Votes</button>
+  </div>
+</nav>
+<div class="hd">
+  <div class="hd-in">
+    <h1 id="hd-title">Utah's Congressional Delegation</h1>
+    <p id="hd-sub">How your representatives voted on legislation.</p>
+    <div class="hd-stats" id="hd-stats"></div>
+  </div>
+</div>
+<div class="wrap">
+  <div id="p-reps" class="page on"><div class="load">Loading...</div></div>
+  <div id="p-votes" class="page"></div>
+  <div id="p-member" class="page"></div>
+</div>
+<script>
+var DATA=null, filter='all';
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function pcode(p){return (p||'').charAt(0)==='D'?'D':(p||'').charAt(0)==='R'?'R':'I';}
+function initials(n){var p=String(n||'').replace(',','').split(' ').filter(Boolean);if(p.length<2)return (p[0]||'?').substring(0,2).toUpperCase();return (p[1].charAt(0)+p[0].charAt(0)).toUpperCase();}
+function display(n){if(String(n).indexOf(',')===-1)return n;var p=String(n).split(',');return (p[1]||'').trim()+' '+p[0].trim();}
+function seat(m){return m.chamber==='Senate'?'U.S. Senator':m.state+'-'+m.district;}
+function go(page){
+  ['reps','votes','member'].forEach(function(p){var el=document.getElementById('p-'+p);if(el)el.className='page'+(p===page?' on':'');});
+  ['reps','votes'].forEach(function(t){var el=document.getElementById('t-'+t);if(el)el.className='tab'+(t===page?' on':'');});
+  var ti=document.getElementById('hd-title'),su=document.getElementById('hd-sub');
+  if(page==='reps'){ti.textContent="Utah's Congressional Delegation";su.textContent='How your representatives voted on legislation.';}
+  if(page==='votes'){ti.textContent='Recent Votes in Congress';su.textContent='Final passage votes, explained in plain English.';}
+  window.scrollTo(0,0);
+}
+function renderStats(){
+  var c=DATA.counts;
+  document.getElementById('hd-stats').innerHTML=
+    '<div class="st"><b>'+c.members+'</b><span>Your reps</span></div>'+
+    '<div class="st"><b>'+c.votes+'</b><span>Votes tracked</span></div>'+
+    '<div class="st"><b>'+DATA.issues.length+'</b><span>Issue areas</span></div>';
+}
+function renderReps(){
+  var sen=DATA.members.filter(function(m){return m.chamber==='Senate';});
+  var hou=DATA.members.filter(function(m){return m.chamber!=='Senate';}).sort(function(a,b){return (+a.district||0)-(+b.district||0);});
+  var all=sen.concat(hou),h='<div class="mgrid">';
+  all.forEach(function(m){
+    var r=m.record||{},tot=m.total_votes||1,y=r.Yea||0,n=r.Nay||0,ms=r['Not Voting']||0,att=m.attendance_pct;
+    var cls=att>=98?'good':att>=90?'mid':'low';
+    h+='<div class="mcard" onclick="member(\''+m.bioguide_id+'\')"><div class="mtop">'+
+      '<div class="av '+pcode(m.party)+'">'+initials(m.full_name)+'</div><div>'+
+      '<div class="mname">'+esc(display(m.full_name))+'</div>'+
+      '<div class="mseat">'+esc(seat(m))+' &middot; '+esc((m.party||'').charAt(0))+'</div></div></div>'+
+      '<div class="mbody"><div class="mrow"><span>'+tot+' final passage votes</span></div>'+
+      '<div class="bar"><i class="y" style="width:'+(y/tot*100)+'%"></i><i class="n" style="width:'+(n/tot*100)+'%"></i><i class="m" style="width:'+(ms/tot*100)+'%"></i></div>'+
+      '<div class="legend"><s><i class="dot" style="background:var(--yes)"></i>'+y+' yes</s>'+
+      '<s><i class="dot" style="background:var(--no)"></i>'+n+' no</s>'+
+      (ms?'<s><i class="dot" style="background:var(--cream-deep)"></i>'+ms+' missed</s>':'')+'</div>'+
+      '<div class="att '+cls+'"><span style="font-size:12px;color:var(--slate)">Attendance</span>'+
+      '<span class="att-n">'+(att==null?'-':att+'%')+'</span></div></div></div>';
+  });
+  document.getElementById('p-reps').innerHTML=h+'</div>';
+}
+function voteCard(v){
+  var h='<div class="vcard"><div class="vtop">'+
+    '<span class="badge '+(v.chamber==='House'?'h':'s')+'">'+v.chamber+'</span>'+
+    '<span class="bnum">'+esc(v.bill_id||'')+'</span>'+
+    '<span class="bnum">'+esc(v.issue_icon+' '+v.issue_label)+'</span>'+
+    '<span class="vres '+(/pass|agreed/i.test(v.result||'')?'p':'f')+'">'+esc(v.result||'')+'</span></div>';
+  if(v.plain_summary)h+='<div class="vsum">'+esc(v.plain_summary)+'</div>';
+  if(v.yes_means||v.no_means)h+='<div class="vmeans">'+
+    '<div class="mbox y"><div class="mlab">A YES vote meant</div><div class="mtxt">'+esc(v.yes_means||'')+'</div></div>'+
+    '<div class="mbox n"><div class="mlab">A NO vote meant</div><div class="mtxt">'+esc(v.no_means||'')+'</div></div></div>';
+  if(v.who_affected)h+='<div class="vwho"><b>Who this affects:</b> '+esc(v.who_affected)+'</div>';
+  var rows='';
+  DATA.members.forEach(function(m){
+    var p=null;
+    for(var i=0;i<m.positions.length;i++){if(m.positions[i].vote_id===v.id){p=m.positions[i].position;break;}}
+    if(!p)return;
+    rows+='<div class="vd"><div class="vd-av '+pcode(m.party)+'">'+initials(m.full_name)+'</div>'+
+      '<div class="vd-nm">'+esc(display(m.full_name))+'</div>'+
+      '<span class="pos '+p.replace(' ','')+'">'+esc(p)+'</span></div>';
+  });
+  if(rows)h+='<div class="vdel"><div class="vdel-t">How Utah voted</div>'+rows+'</div>';
+  return h+'</div>';
+}
+function renderVotes(){
+  var list=DATA.votes.filter(function(v){return !v.is_procedural;});
+  if(filter!=='all')list=list.filter(function(v){return v.issue_label===filter;});
+  var h='<div class="filters"><span class="chip'+(filter==='all'?' on':'')+'" onclick="setFilter(\'all\')">All issues</span>';
+  DATA.issues.forEach(function(i){
+    h+='<span class="chip'+(filter===i.label?' on':'')+'" onclick="setFilter(\''+i.label.replace(/'/g,"\\'")+'\')">'+i.icon+' '+esc(i.label)+' '+i.count+'</span>';
+  });
+  h+='</div>';
+  if(!list.length)h+='<div class="empty">No votes in this category.</div>';
+  else list.forEach(function(v){h+=voteCard(v);});
+  document.getElementById('p-votes').innerHTML=h;
+}
+function setFilter(f){filter=f;renderVotes();window.scrollTo(0,0);}
+function member(id){
+  var m=null;
+  for(var i=0;i<DATA.members.length;i++){if(DATA.members[i].bioguide_id===id){m=DATA.members[i];break;}}
+  if(!m)return;
+  var r=m.record||{},tot=m.total_votes||1;
+  var h='<button class="back" onclick="go(\'reps\')">&larr; Back to delegation</button>'+
+    '<div class="ihead"><div class="av '+pcode(m.party)+'" style="width:60px;height:60px;font-size:19px">'+initials(m.full_name)+'</div><div>'+
+    '<div style="font-family:var(--disp);font-size:24px">'+esc(display(m.full_name))+'</div>'+
+    '<div class="mseat">'+esc(seat(m))+' &middot; '+esc(m.party)+'</div>'+
+    '<div style="font-size:13px;color:var(--slate);margin-top:6px">'+tot+' votes &middot; '+(r.Yea||0)+' yes &middot; '+(r.Nay||0)+' no'+
+    ((r['Not Voting']||0)?' &middot; '+r['Not Voting']+' missed':'')+' &middot; '+(m.attendance_pct==null?'-':m.attendance_pct+'% attendance')+
+    '</div></div></div>'+
+    '<div style="font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--slate-lt);margin-bottom:10px">Voting record by issue</div><div class="igrid">';
+  (m.by_issue||[]).forEach(function(i){
+    var t=i.total||1;
+    h+='<div class="icard"><div class="iname">'+i.icon+' '+esc(i.label)+'</div>'+
+      '<div class="imini"><i style="width:'+(i.yea/t*100)+'%;background:var(--yes);height:100%"></i>'+
+      '<i style="width:'+(i.nay/t*100)+'%;background:var(--no);height:100%"></i>'+
+      '<i style="width:'+(i.missed/t*100)+'%;background:var(--cream-deep);height:100%"></i></div>'+
+      '<div class="icount">'+i.yea+' yes &middot; '+i.nay+' no'+(i.missed?' &middot; '+i.missed+' missed':'')+'</div></div>';
+  });
+  document.getElementById('p-member').innerHTML=h+'</div>';
+  go('member');
+}
+fetch('/.netlify/functions/get-votes').then(function(r){return r.json();}).then(function(d){
+  if(d.error){document.getElementById('p-reps').innerHTML='<div class="empty">Error: '+esc(d.error)+'</div>';return;}
+  DATA=d;renderStats();renderReps();renderVotes();
+}).catch(function(e){
+  document.getElementById('p-reps').innerHTML='<div class="empty">Could not load: '+esc(e.message)+'</div>';
+});
+</script>
+</body>
+</html>

@@ -23,10 +23,10 @@ exports.handler = async function (event, context) {
   const log = [];
   const START_TIME = Date.now();
   const elapsed = () => Date.now() - START_TIME;
-  const DEADLINE_MS = 14000; // bail out before Netlify's 30s limit
+  const DEADLINE_MS = 600000; // 10 min, well under the 15 min ceiling // bail out before Netlify's 30s limit
   let newBills = 0;
 
-  const MAX_NEW_PER_RUN = 1;   // summarize at most 2 new bills per run
+  const MAX_NEW_PER_RUN = 25;   // summarize at most 2 new bills per run
   const FETCH_LIMIT = 100;       // consider only a few recent bills per source
 
   async function fetchWithTimeout(url, options = {}, ms = 6000) {

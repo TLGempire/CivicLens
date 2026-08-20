@@ -1,0 +1,11 @@
+[build]
+  functions = "netlify/functions"
+  publish = "."
+
+[functions]
+  node_bundler = "esbuild"
+
+# Runs once a day at 9:00 AM UTC (about 2-3 AM Mountain).
+# Background functions get a 15-minute limit instead of 30 seconds.
+[functions."daily-ingest-background"]
+  schedule = "0 9 * * *"

@@ -1,0 +1,46 @@
+const fs = require('fs');
+const { execSync } = require('child_process');
+
+const L = [];
+const p = (s) => L.push(s);
+
+p("// Runs the Senate and House ingest scripts repeatedly to build up vote data.");
+p("// Each script caps itself per run, so we loop until nothing new comes back.");
+p("const { execSync } = require('child_process');");
+p("");
+p("function run(script) {");
+p("  try {");
+p("    return execSync('node ' + script, { encoding: 'utf8', stdio: 'pipe' });");
+p("  } catch (e) {");
+p("    return (e.stdout || '') + (e.stderr || '');");
+p("  }");
+p("}");
+p("");
+p("const ROUNDS = 8;");
+p("");
+p("console.log('\\n=== BACKFILL: SENATE ===\\n');");
+p("for (let i = 1; i <= ROUNDS; i++) {");
+p("  const out = run('ingest-senate-votes.js');");
+p("  const m = out.match(/Done\\. (\\d+) votes ingested/);");
+p("  const n = m ? parseInt(m[1], 10) : 0;");
+p("  console.log('round ' + i + ': ' + n + ' votes');");
+p("  if (n === 0) { console.log('  nothing new, stopping'); break; }");
+p("}");
+p("");
+p("console.log('\\n=== BACKFILL: HOUSE ===\\n');");
+p("for (let i = 1; i <= ROUNDS; i++) {");
+p("  const out = run('ingest-house-votes.js');");
+p("  const m = out.match(/ingested (\\d+)\\./);");
+p("  const n = m ? parseInt(m[1], 10) : 0;");
+p("  console.log('round ' + i + ': ' + n + ' votes');");
+p("  if (n === 0) { console.log('  nothing new, stopping'); break; }");
+p("}");
+p("");
+p("console.log('\\n=== NORMALIZING POSITIONS ===');");
+p("console.log(run('normalize-positions.js'));");
+p("");
+p("console.log('=== BACKFILLING POLICY AREAS ===');");
+p("console.log(run('backfill-policy-areas.js'));");
+
+fs.writeFileSync('backfill-all.js', L.join('\n'), 'utf8');
+console.log('\nWrote backfill-all.js\n');

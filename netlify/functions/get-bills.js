@@ -32,7 +32,7 @@ exports.handler = async function (event, context) {
   try {
     // Pull the most recent bills, newest first
     const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/bills?select=*&order=updated_at.desc&limit=40`,
+      `${SUPABASE_URL}/rest/v1/bills?select=*&order=updated_at.desc&limit=500`,
       { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } }
     );
 
