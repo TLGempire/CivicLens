@@ -1536,6 +1536,8 @@ function renderBills(bills) {
 // Runs one at a time to avoid hammering the API, and caches via Supabase
 // so repeat visits are instant and free.
 async function loadFeedSummaries(bills) {
+  // SUMMARIES_PAUSED: skip AI calls to avoid cost
+  return;
   for (const bill of bills) {
     if (!bill.needsSummary || bill.summaryLoaded) continue;
     try {
