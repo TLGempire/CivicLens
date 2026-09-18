@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#12212E">
+<title>CivicLens</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --ink:#12212E; --ink-2:#2E4256; --mute:#7B8FA1;
+  --paper:#F7F5F0; --paper-2:#EDEAE2; --line:#DFDACE;
+  --brass:#B08D3F;
+  --yes:#3A6E8F; --yes-bg:#E7EFF4; --yes-bd:#BBD2E0;
+  --no:#8A6A3F; --no-bg:#F4EEE4; --no-bd:#DBC8AB;
+  --absent:#C9C2B4;
+  --mono:'IBM Plex Mono',monospace; --disp:'Newsreader',Georgia,serif; --body:'Inter',system-ui,-apple-system,sans-serif;
+}
+html,body{height:100%}
+body{font-family:var(--body);background:var(--paper);color:var(--ink);line-height:1.5;-webkit-font-smoothing:antialiased;overscroll-behavior-y:none}
+button{font-family:inherit;border:none;background:none;cursor:pointer;color:inherit}
+a{color:inherit}
+
+.app{max-width:560px;margin:0 auto;min-height:100%;display:flex;flex-direction:column;background:var(--paper)}
+.top{background:var(--ink);padding:14px 18px;position:sticky;top:0;z-index:50;display:flex;align-items:center;gap:12px}
+.mark{font-family:var(--disp);font-size:18px;color:var(--paper)}
+.mark i{font-style:normal;color:var(--brass)}
+.top-loc{margin-left:auto;font-family:var(--mono);font-size:10px;color:rgba(255,255,255,.6);border:1px solid rgba(255,255,255,.2);padding:5px 9px;border-radius:5px;letter-spacing:.05em}
+.main{flex:1;padding:18px 18px 92px}
+.screen{display:none}.screen.on{display:block}
+
+.tabbar{position:fixed;bottom:0;left:0;right:0;max-width:560px;margin:0 auto;background:#fff;border-top:1px solid var(--line);display:flex;padding:8px 0 max(10px,env(safe-area-inset-bottom));z-index:50}
+.tb{flex:1;text-align:center;font-size:9.5px;color:var(--mute);font-weight:500;padding:2px 0}
+.tb.on{color:var(--brass);font-weight:600}
+.tb u{display:block;font-size:16px;text-decoration:none;margin-bottom:3px;line-height:1}
+
+.eyebrow{font-family:var(--mono);font-size:9.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--mute)}
+.h1{font-family:var(--disp);font-size:24px;font-weight:600;margin:4px 0 3px;letter-spacing:-.015em;line-height:1.15}
+.sub{color:var(--mute);font-size:13px;margin-bottom:18px;line-height:1.5}
+.grp{font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute);padding-bottom:7px;border-bottom:1px solid var(--line);margin:18px 0 11px}
+.grp:first-of-type{margin-top:0}
+
+.card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:10px}
+.card.mine{border-color:var(--brass);border-width:1.5px}
+.m-top{display:flex;gap:12px;align-items:center}
+.photo{width:48px;height:48px;border-radius:50%;object-fit:cover;background:var(--paper-2);flex-shrink:0}
+.m-name{font-family:var(--disp);font-size:17px;font-weight:600;line-height:1.15}
+.m-meta{font-family:var(--mono);font-size:10px;color:var(--mute);margin-top:3px;letter-spacing:.04em}
+.flag{margin-left:auto;font-family:var(--mono);font-size:8.5px;letter-spacing:.09em;color:var(--brass);border:1px solid var(--brass);padding:3px 6px;border-radius:4px;white-space:nowrap}
+.present{font-size:12px;color:var(--ink-2);margin-top:12px;padding-top:11px;border-top:1px solid var(--paper-2)}
+.present b{color:var(--ink);font-weight:600}
+.acts{display:flex;gap:7px;margin-top:11px}
+.act{flex:1;text-align:center;padding:10px 6px;border-radius:8px;border:1px solid var(--line);background:var(--paper);font-size:12px;font-weight:600;color:var(--ink-2);text-decoration:none;display:block}
+.act.pri{background:var(--ink);border-color:var(--ink);color:var(--paper)}
+
+.picker{position:fixed;inset:0;background:rgba(18,33,46,.45);z-index:100;display:none;align-items:flex-end}
+.picker.on{display:flex}
+.picker-in{background:var(--paper);width:100%;max-width:560px;margin:0 auto;border-radius:16px 16px 0 0;padding:20px 18px max(20px,env(safe-area-inset-bottom));max-height:80vh;overflow-y:auto}
+.picker h3{font-family:var(--disp);font-size:19px;font-weight:600;margin-bottom:4px}
+.picker p{font-size:12.5px;color:var(--mute);margin-bottom:16px}
+.field{margin-bottom:14px}
+.field label{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--mute);display:block;margin-bottom:6px}
+select{width:100%;padding:12px;border:1px solid var(--line);border-radius:9px;background:#fff;font-size:15px;font-family:inherit;color:var(--ink)}
+.picker-save{width:100%;background:var(--ink);color:var(--paper);padding:13px;border-radius:9px;font-size:14px;font-weight:600;margin-top:4px}
+
+.prog{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.prog-bar{flex:1;height:3px;background:var(--paper-2);border-radius:2px;overflow:hidden}
+.prog-bar i{display:block;height:100%;background:var(--brass);transition:width .3s}
+.prog span{font-family:var(--mono);font-size:10px;color:var(--mute)}
+.vmeta{display:flex;gap:6px;align-items:center;margin-bottom:10px;flex-wrap:wrap}
+.tag{font-family:var(--mono);font-size:9px;padding:3px 7px;border-radius:4px;background:var(--paper-2);color:var(--ink-2);letter-spacing:.04em}
+.vq{font-family:var(--disp);font-size:19px;font-weight:600;line-height:1.3;margin-bottom:14px;letter-spacing:-.01em}
+.mbox{border-radius:10px;padding:12px 13px;margin-bottom:8px}
+.mbox.y{background:var(--yes-bg);border:1px solid var(--yes-bd)}
+.mbox.n{background:var(--no-bg);border:1px solid var(--no-bd)}
+.mlab{font-family:var(--mono);font-size:9px;font-weight:600;letter-spacing:.1em;margin-bottom:5px}
+.mbox.y .mlab{color:var(--yes)}
+.mbox.n .mlab{color:var(--no)}
+.mtxt{font-size:13px;line-height:1.5;color:var(--ink-2)}
+.who{font-size:12px;color:var(--mute);margin:11px 0 18px;line-height:1.5}
+.who b{color:var(--ink-2);font-weight:600}
+.ask{font-family:var(--mono);font-size:9.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--mute);text-align:center;margin-bottom:10px}
+.btns{display:flex;gap:9px}
+.btn{flex:1;padding:14px;border-radius:10px;text-align:center;font-size:14px;font-weight:600;border:1.5px solid}
+.btn.y{background:var(--yes);border-color:var(--yes);color:#fff}
+.btn.n{background:var(--no);border-color:var(--no);color:#fff}
+.skip{display:block;width:100%;text-align:center;font-size:12px;color:var(--mute);margin-top:12px;text-decoration:underline}
+
+.pos-row{background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:8px}
+.pos-top{display:flex;align-items:center;gap:7px;margin-bottom:6px}
+.pos-b{font-family:var(--mono);font-size:9px;color:var(--mute);letter-spacing:.04em}
+.pos-mine{margin-left:auto;font-family:var(--mono);font-size:9px;padding:3px 8px;border-radius:4px;color:#fff}
+.pos-mine.Yea{background:var(--yes)}
+.pos-mine.Nay{background:var(--no)}
+.pos-q{font-size:13px;line-height:1.45;color:var(--ink-2)}
+.pos-rep{font-size:11.5px;color:var(--mute);margin-top:8px;padding-top:8px;border-top:1px solid var(--paper-2);line-height:1.5}
+.pos-rep b{color:var(--ink-2);font-weight:600}
+.write{background:var(--ink);color:var(--paper);border-radius:12px;padding:16px;margin-top:16px}
+.write h4{font-family:var(--disp);font-size:16px;font-weight:600;margin-bottom:6px}
+.write p{font-size:12px;color:rgba(255,255,255,.65);line-height:1.5;margin-bottom:13px}
+.write-b{display:block;background:var(--brass);color:var(--ink);text-align:center;padding:12px;border-radius:8px;font-size:13px;font-weight:600;text-decoration:none}
+
+.step{display:flex;gap:13px}
+.step-l{display:flex;flex-direction:column;align-items:center;flex-shrink:0}
+.step-d{width:26px;height:26px;border-radius:50%;background:#fff;border:1.5px solid var(--line);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;font-weight:600;color:var(--ink-2)}
+.step-line{width:1.5px;flex:1;background:var(--line);min-height:18px}
+.step-b{padding-bottom:18px}
+.step-t{font-family:var(--disp);font-size:15px;font-weight:600;line-height:1.2;margin-bottom:4px}
+.step-x{font-size:12.5px;color:var(--mute);line-height:1.5}
+.dies{background:var(--no-bg);border:1px solid var(--no-bd);border-radius:10px;padding:13px;margin-top:8px}
+.dies b{font-size:13px;color:var(--no);display:block;margin-bottom:4px}
+.dies p{font-size:12.5px;color:var(--ink-2);line-height:1.5}
+
+.vcard{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:10px}
+.vtop{display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin-bottom:9px}
+.vsum{font-size:14px;line-height:1.5;margin-bottom:11px}
+.vdel{background:var(--paper);border-radius:9px;padding:11px;margin-top:11px}
+.vdel-t{font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--mute);margin-bottom:9px}
+.vd{display:flex;align-items:center;gap:9px;padding:5px 0}
+.vd-p{width:24px;height:24px;border-radius:50%;object-fit:cover;background:var(--paper-2);flex-shrink:0}
+.vd-n{font-size:12.5px;flex:1}
+.chip{font-family:var(--mono);font-size:9.5px;font-weight:600;padding:3px 8px;border-radius:4px;color:#fff}
+.chip.Yea{background:var(--yes)}
+.chip.Nay{background:var(--no)}
+.chip.NotVoting{background:var(--absent)}
+.chip.Present{background:var(--mute)}
+
+.filters{display:flex;gap:7px;overflow-x:auto;padding-bottom:4px;margin-bottom:14px;-webkit-overflow-scrolling:touch}
+.filters::-webkit-scrollbar{display:none}
+.chipf{padding:7px 13px;border-radius:18px;border:1.5px solid var(--line);background:#fff;font-size:12px;font-weight:500;color:var(--ink-2);white-space:nowrap;flex-shrink:0}
+.chipf.on{background:var(--brass);border-color:var(--brass);color:#fff;font-weight:600}
+
+.load{text-align:center;padding:60px 20px;color:var(--mute);font-family:var(--mono);font-size:12px}
+.empty{text-align:center;padding:40px 20px;color:var(--mute);font-size:13px;line-height:1.6}
+.empty b{display:block;color:var(--ink);font-size:15px;font-family:var(--disp);margin-bottom:6px}
+.done-box{background:#fff;border:1px dashed var(--brass);border-radius:12px;padding:20px;text-align:center}
+.done-box b{display:block;font-family:var(--disp);font-size:17px;margin-bottom:6px}
+.done-box p{font-size:12.5px;color:var(--mute);line-height:1.5;margin-bottom:14px}
+.done-b{display:inline-block;background:var(--ink);color:var(--paper);padding:11px 20px;border-radius:8px;font-size:13px;font-weight:600}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="top">
+    <span class="mark">Civic<i>Lens</i></span>
+    <button class="top-loc" id="loc" onclick="openPicker()">UT-1</button>
+  </div>
+
+  <div class="main">
+    <div id="s-reps" class="screen on"><div class="load">Loading...</div></div>
+    <div id="s-votes" class="screen"></div>
+    <div id="s-weigh" class="screen"></div>
+    <div id="s-positions" class="screen"></div>
+    <div id="s-learn" class="screen"></div>
+  </div>
+
+  <div class="tabbar">
+    <button class="tb on" id="t-reps" onclick="go('reps')"><u>&#9670;</u>Delegation</button>
+    <button class="tb" id="t-votes" onclick="go('votes')"><u>&#9636;</u>Votes</button>
+    <button class="tb" id="t-weigh" onclick="go('weigh')"><u>&#9680;</u>Weigh in</button>
+    <button class="tb" id="t-positions" onclick="go('positions')"><u>&#9635;</u>Yours</button>
+    <button class="tb" id="t-learn" onclick="go('learn')"><u>&#9672;</u>Learn</button>
+  </div>
+</div>
+
+<div class="picker" id="picker">
+  <div class="picker-in">
+    <h3>Where do you vote?</h3>
+    <p>This decides whose record you see. Your choice stays on this device.</p>
+    <div class="field">
+      <label>State</label>
+      <select id="sel-state"></select>
+    </div>
+    <div class="field">
+      <label>Congressional district</label>
+      <select id="sel-district"></select>
+    </div>
+    <button class="picker-save" onclick="savePicker()">Save</button>
+  </div>
+</div>
+
+<script>
+var DATA=null, filter='all', chamber='all', weighIdx=0;
+var ST = {
+  state: localStorage.getItem('cl_state') || 'Utah',
+  district: localStorage.getItem('cl_district') || '1',
+  answers: JSON.parse(localStorage.getItem('cl_answers') || '{}')
+};
+
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function disp(n){if(String(n).indexOf(',')===-1)return n;var p=String(n).split(',');return (p[1]||'').trim()+' '+p[0].trim();}
+function seat(m){return m.chamber==='Senate'?'U.S. Senator':'District '+m.district;}
+function save(){localStorage.setItem('cl_answers',JSON.stringify(ST.answers));}
+
+var TABS=['reps','votes','weigh','positions','learn'];
+function go(t){
+  TABS.forEach(function(x){
+    var s=document.getElementById('s-'+x); if(s) s.className='screen'+(x===t?' on':'');
+    var b=document.getElementById('t-'+x); if(b) b.className='tb'+(x===t?' on':'');
+  });
+  if(t==='weigh') renderWeigh();
+  if(t==='positions') renderPositions();
+  window.scrollTo(0,0);
+}
+
+function openPicker(){
+  var ss=document.getElementById('sel-state');
+  if(!ss.options.length){
+    var states=['Alabama','Alaska','Arizona','Arkansas','California','Colorado','Connecticut','Delaware','Florida','Georgia','Hawaii','Idaho','Illinois','Indiana','Iowa','Kansas','Kentucky','Louisiana','Maine','Maryland','Massachusetts','Michigan','Minnesota','Mississippi','Missouri','Montana','Nebraska','Nevada','New Hampshire','New Jersey','New Mexico','New York','North Carolina','North Dakota','Ohio','Oklahoma','Oregon','Pennsylvania','Rhode Island','South Carolina','South Dakota','Tennessee','Texas','Utah','Vermont','Virginia','Washington','West Virginia','Wisconsin','Wyoming'];
+    ss.innerHTML=states.map(function(s){return '<option'+(s===ST.state?' selected':'')+'>'+s+'</option>';}).join('');
+  }
+  fillDistricts();
+  document.getElementById('picker').className='picker on';
+}
+function fillDistricts(){
+  var ds=document.getElementById('sel-district');
+  var list=(DATA&&DATA.districts&&DATA.districts.length)?DATA.districts:['1'];
+  ds.innerHTML=list.map(function(d){return '<option value="'+d+'"'+(String(d)===String(ST.district)?' selected':'')+'>District '+d+'</option>';}).join('');
+}
+function savePicker(){
+  ST.state=document.getElementById('sel-state').value;
+  ST.district=document.getElementById('sel-district').value;
+  localStorage.setItem('cl_state',ST.state);
+  localStorage.setItem('cl_district',ST.district);
+  document.getElementById('picker').className='picker';
+  load();
+}
+
+function renderReps(){
+  var sen=DATA.members.filter(function(m){return m.chamber==='Senate';});
+  var mine=DATA.members.filter(function(m){return m.chamber!=='Senate'&&m.is_yours;});
+  var h='<div class="eyebrow">'+esc(DATA.state)+' &middot; 119th Congress</div>'+
+    '<div class="h1">Who speaks for you</div>'+
+    '<div class="sub">Three people in Washington vote on your behalf. Here is how to reach them.</div>';
+
+  h+='<div class="grp">Senate</div>';
+  sen.forEach(function(m){h+=memberCard(m,false);});
+
+  if(mine.length){
+    h+='<div class="grp">House &middot; District '+esc(ST.district)+'</div>';
+    mine.forEach(function(m){h+=memberCard(m,true);});
+  }
+  document.getElementById('s-reps').innerHTML=h;
+}
+
+function memberCard(m,isMine){
+  var cast=(m.record.Yea||0)+(m.record.Nay||0)+(m.record.Present||0);
+  var tot=m.total_votes||0;
+  var photo=m.photo_url?'<img class="photo" src="'+esc(m.photo_url)+'" alt="">':'<div class="photo"></div>';
+  var h='<div class="card'+(isMine?' mine':'')+'"><div class="m-top">'+photo+
+    '<div><div class="m-name">'+esc(disp(m.full_name))+'</div>'+
+    '<div class="m-meta">'+esc(seat(m))+' &middot; '+esc((m.party||'').charAt(0))+'</div></div>'+
+    (isMine?'<span class="flag">YOURS</span>':'')+'</div>'+
+    '<div class="present">Present for <b>'+cast+' of '+tot+'</b> final passage votes</div>'+
+    '<div class="acts">'+
+      (m.contact_url?'<a class="act pri" href="'+esc(m.contact_url)+'" target="_blank" rel="noopener">Write</a>':'')+
+      (m.phone?'<a class="act" href="tel:'+esc(String(m.phone).replace(/[^0-9]/g,''))+'">Call</a>':'')+
+      (m.website_url?'<a class="act" href="'+esc(m.website_url)+'" target="_blank" rel="noopener">Site</a>':'')+
+    '</div></div>';
+  return h;
+}
+
+function voteCard(v,showDel){
+  var h='<div class="vcard"><div class="vtop">'+
+    '<span class="tag">'+esc(v.chamber)+'</span>'+
+    '<span class="tag">'+esc(v.bill_id||'')+'</span>'+
+    '<span class="tag">'+esc(v.issue_label)+'</span></div>';
+  if(v.plain_summary) h+='<div class="vsum">'+esc(v.plain_summary)+'</div>';
+  if(v.yes_means) h+='<div class="mbox y"><div class="mlab">A YES VOTE MEANT</div><div class="mtxt">'+esc(v.yes_means)+'</div></div>';
+  if(v.no_means) h+='<div class="mbox n"><div class="mlab">A NO VOTE MEANT</div><div class="mtxt">'+esc(v.no_means)+'</div></div>';
+  if(v.who_affected) h+='<div class="who" style="margin-bottom:0"><b>Who this affects:</b> '+esc(v.who_affected)+'</div>';
+  if(showDel){
+    var rows='';
+    DATA.members.forEach(function(m){
+      var p=null;
+      for(var i=0;i<m.positions.length;i++){if(m.positions[i].vote_id===v.id){p=m.positions[i].position;break;}}
+      if(!p) return;
+      if(m.chamber!=='Senate'&&!m.is_yours) return;
+      var ph=m.photo_url?'<img class="vd-p" src="'+esc(m.photo_url)+'" alt="">':'<div class="vd-p"></div>';
+      rows+='<div class="vd">'+ph+'<div class="vd-n">'+esc(disp(m.full_name))+'</div>'+
+        '<span class="chip '+p.replace(' ','')+'">'+esc(p)+'</span></div>';
+    });
+    if(rows) h+='<div class="vdel"><div class="vdel-t">How your delegation voted</div>'+rows+'</div>';
+  }
+  return h+'</div>';
+}
+
+function renderVotes(){
+  var list=DATA.votes.filter(function(v){return !v.is_procedural;});
+  if(chamber!=='all') list=list.filter(function(v){return v.chamber===chamber;});
+  if(filter!=='all') list=list.filter(function(v){return v.issue_label===filter;});
+  var h='<div class="eyebrow">'+DATA.counts.votes+' votes tracked</div>'+
+    '<div class="h1">What Congress decided</div>'+
+    '<div class="sub">Final passage votes, in plain English.</div>';
+  h+='<div class="filters" style="margin-bottom:10px">'+
+    '<button class="chipf'+(chamber==='all'?' on':'')+'" onclick="setChamber(&#39;all&#39;)">Both chambers</button>'+
+    '<button class="chipf'+(chamber==='Senate'?' on':'')+'" onclick="setChamber(&#39;Senate&#39;)">Senate '+DATA.counts.senate+'</button>'+
+    '<button class="chipf'+(chamber==='House'?' on':'')+'" onclick="setChamber(&#39;House&#39;)">House '+DATA.counts.house+'</button>'+
+    '</div>';
+  h+='<div class="filters"><button class="chipf'+(filter==='all'?' on':'')+'" onclick="setFilter(\'all\')">All</button>';
+  DATA.issues.forEach(function(i){
+    h+='<button class="chipf'+(filter===i.label?' on':'')+'" onclick="setFilter(\''+i.label.replace(/'/g,"\\'")+'\')">'+esc(i.label)+' '+i.count+'</button>';
+  });
+  h+='</div>';
+  if(!list.length) h+='<div class="empty">Nothing in this category yet.</div>';
+  else list.forEach(function(v){h+=voteCard(v,true);});
+  document.getElementById('s-votes').innerHTML=h;
+}
+function setFilter(f){filter=f;renderVotes();window.scrollTo(0,0);}
+function setChamber(c){chamber=c;filter='all';renderVotes();window.scrollTo(0,0);}
+
+function weighList(){
+  return DATA.votes.filter(function(v){return !v.is_procedural && v.plain_summary && v.yes_means;});
+}
+function renderWeigh(){
+  var list=weighList();
+  var todo=list.filter(function(v){return !ST.answers[v.id];});
+  var answered=list.length-todo.length;
+
+  if(!todo.length){
+    document.getElementById('s-weigh').innerHTML=
+      '<div class="eyebrow">'+answered+' of '+list.length+'</div>'+
+      '<div class="h1">You are caught up</div>'+
+      '<div class="sub">You have weighed in on every vote we have loaded.</div>'+
+      '<div class="done-box"><b>Nothing left for now</b>'+
+      '<p>New votes appear here as Congress takes them.</p>'+
+      '<button class="done-b" onclick="go(\'positions\')">See your positions</button></div>';
+    return;
+  }
+
+  var v=todo[0];
+  var pct=Math.round(answered/list.length*100);
+  var h='<div class="prog"><div class="prog-bar"><i style="width:'+pct+'%"></i></div>'+
+    '<span>'+answered+' / '+list.length+'</span></div>';
+  h+='<div class="vmeta"><span class="tag">'+esc(v.chamber)+'</span>'+
+    '<span class="tag">'+esc(v.bill_id||'')+'</span>'+
+    '<span class="tag">'+esc(v.issue_label)+'</span></div>';
+  h+='<div class="vq">'+esc(v.plain_summary)+'</div>';
+  h+='<div class="mbox y"><div class="mlab">A YES VOTE MEANT</div><div class="mtxt">'+esc(v.yes_means||'')+'</div></div>';
+  h+='<div class="mbox n"><div class="mlab">A NO VOTE MEANT</div><div class="mtxt">'+esc(v.no_means||'')+'</div></div>';
+  if(v.who_affected) h+='<div class="who"><b>Who this affects:</b> '+esc(v.who_affected)+'</div>';
+  h+='<div class="ask">Where do you land?</div>'+
+    '<div class="btns">'+
+    '<button class="btn y" onclick="answer('+v.id+',\'Yea\')">Yes</button>'+
+    '<button class="btn n" onclick="answer('+v.id+',\'Nay\')">No</button></div>'+
+    '<button class="skip" onclick="answer('+v.id+',\'skip\')">Not sure &mdash; skip</button>';
+  document.getElementById('s-weigh').innerHTML=h;
+}
+function answer(id,pos){
+  ST.answers[id]=pos;
+  save();
+  renderWeigh();
+  window.scrollTo(0,0);
+}
+
+function renderPositions(){
+  var ids=Object.keys(ST.answers).filter(function(k){return ST.answers[k]!=='skip';});
+  if(!ids.length){
+    document.getElementById('s-positions').innerHTML=
+      '<div class="h1">Your positions</div>'+
+      '<div class="empty"><b>Nothing here yet</b>'+
+      'Weigh in on a few votes and they will collect here, along with how your delegation voted.'+
+      '<div style="margin-top:16px"><button class="done-b" onclick="go(\'weigh\')">Start weighing in</button></div></div>';
+    return;
+  }
+  var byId={};
+  DATA.votes.forEach(function(v){byId[v.id]=v;});
+
+  var h='<div class="eyebrow">'+ids.length+' positions &middot; '+esc(DATA.state)+'</div>'+
+    '<div class="h1">Where you stand</div>'+
+    '<div class="sub">Your views on the votes you have read, with your delegation alongside.</div>';
+
+  ids.forEach(function(id){
+    var v=byId[id]; if(!v) return;
+    var mine=ST.answers[id];
+    var reps=[];
+    DATA.members.forEach(function(m){
+      if(m.chamber!=='Senate'&&!m.is_yours) return;
+      for(var i=0;i<m.positions.length;i++){
+        if(m.positions[i].vote_id===v.id){
+          reps.push(esc(disp(m.full_name).split(' ').pop())+' voted <b>'+m.positions[i].position.toLowerCase()+'</b>');
+          break;
+        }
+      }
+    });
+    h+='<div class="pos-row"><div class="pos-top">'+
+      '<span class="pos-b">'+esc(v.bill_id||'')+' &middot; '+esc(v.issue_label).toUpperCase()+'</span>'+
+      '<span class="pos-mine '+mine+'">YOU: '+(mine==='Yea'?'YES':'NO')+'</span></div>'+
+      '<div class="pos-q">'+esc(v.plain_summary||'')+'</div>'+
+      (reps.length?'<div class="pos-rep">'+reps.join(' &middot; ')+'</div>':'')+
+      '</div>';
+  });
+
+  h+='<div class="write"><h4>Tell them what you think</h4>'+
+    '<p>Offices count letters written in your own words far more heavily than form letters. Use these notes and write it yourself.</p>';
+  var yours=DATA.members.filter(function(m){return m.contact_url&&(m.chamber==='Senate'||m.is_yours);});
+  yours.sort(function(a,b){return a.chamber==='Senate'?-1:1;});
+  yours.forEach(function(m){
+    h+='<a class="write-b" href="'+esc(m.contact_url)+'" target="_blank" rel="noopener" style="margin-bottom:7px">Write '+esc(disp(m.full_name))+'</a>';
+  });
+  h+='</div>';
+
+  document.getElementById('s-positions').innerHTML=h;
+}
+
+function renderLearn(){
+  var steps=[
+    ['Introduced','A member files the bill. Most stop here. Roughly 90 percent never get a vote.'],
+    ['Committee','A small group studies and rewrites it. This is where most bills quietly die.'],
+    ['Floor vote in the first chamber','Every member votes. These are the votes CivicLens tracks.'],
+    ['The other chamber','The second chamber votes. In the Senate, most bills need 60 votes just to get here.'],
+    ['President signs or vetoes','Congress can override a veto with two thirds of both chambers.'],
+    ['It becomes law','Agencies then write the rules that decide what it means in practice.']
+  ];
+  var h='<div class="eyebrow">Civics</div>'+
+    '<div class="h1">How a bill becomes law</div>'+
+    '<div class="sub">Six stages. Most bills never finish.</div>';
+  steps.forEach(function(s,i){
+    var last=i===steps.length-1;
+    h+='<div class="step"><div class="step-l"><div class="step-d">'+(i+1)+'</div>'+
+      (last?'':'<div class="step-line"></div>')+'</div>'+
+      '<div class="step-b"><div class="step-t">'+s[0]+'</div>'+
+      '<div class="step-x">'+s[1]+'</div></div></div>';
+  });
+  h+='<div class="dies"><b>Where bills actually die</b>'+
+    '<p>Of roughly 16,000 bills introduced in a typical Congress, about 3 percent become law. Most never leave committee.</p></div>';
+  document.getElementById('s-learn').innerHTML=h;
+}
+
+function load(){
+  document.getElementById('loc').textContent=ST.state.substring(0,2).toUpperCase()+'-'+ST.district;
+  fetch('/.netlify/functions/get-votes?state='+encodeURIComponent(ST.state)+'&district='+encodeURIComponent(ST.district))
+    .then(function(r){return r.json();})
+    .then(function(d){
+      if(d.error){document.getElementById('s-reps').innerHTML='<div class="empty">'+esc(d.error)+'</div>';return;}
+      DATA=d;
+      renderReps(); renderVotes(); renderLearn();
+    })
+    .catch(function(e){
+      document.getElementById('s-reps').innerHTML='<div class="empty"><b>Could not load</b>'+esc(e.message)+'</div>';
+    });
+}
+load();
+</script>
+</body>
+</html>

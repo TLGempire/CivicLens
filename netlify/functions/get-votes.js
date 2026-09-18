@@ -65,6 +65,7 @@ exports.handler = async function (event) {
   try {
     const q = (event && event.queryStringParameters) || {};
     const state = q.state || 'Utah';
+    const district = q.district || null;
 
     // All votes, decorated with friendly issue labels
     const vRes = await fetch(SUPABASE_URL + '/rest/v1/votes?select=*&order=vote_date.desc&limit=1000', { headers: db });
@@ -75,6 +76,13 @@ exports.handler = async function (event) {
     // The state's delegation
     const mRes = await fetch(SUPABASE_URL + '/rest/v1/members?state=eq.' + encodeURIComponent(state) + '&select=*&order=chamber.asc', { headers: db });
     const members = await mRes.json();
+
+    // Flag the member who actually represents this user.
+    // Senators represent the whole state; only one House member is yours.
+    members.forEach(function (m) {
+      if (m.chamber === 'Senate') m.is_yours = true;
+      else m.is_yours = district != null && String(m.district) === String(district);
+    });
 
     // Each member's positions
     for (const m of members) {
@@ -121,6 +129,10 @@ exports.handler = async function (event) {
       headers: headers,
       body: JSON.stringify({
         state: state,
+        district: district,
+        districts: members.filter(function (m) { return m.chamber !== 'Senate'; })
+          .map(function (m) { return m.district; })
+          .sort(function (a, b) { return (+a || 0) - (+b || 0); }),
         members: members,
         votes: votes,
         issues: issues,
